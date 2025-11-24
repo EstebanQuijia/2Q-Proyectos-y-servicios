@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const authRoutes = require('./src/routes/authRoutes');
+const inventarioRoutes = require('./src/routes/inventarioRoutes');
 
 const app = express();
 
@@ -14,11 +15,9 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Rutas de la API
 app.use('/api', authRoutes);
+app.use('/api', inventarioRoutes);
 
-// Ruta raíz - redirige al login
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/login.html'));
-});
+
 
 // Iniciar servidor
 const PORT = 3000;

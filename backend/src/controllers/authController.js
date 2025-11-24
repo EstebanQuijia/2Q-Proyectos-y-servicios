@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Clave secreta para JWT (en producción debe estar en variables de entorno)
-const JWT_SECRET = 'mi_clave_secreta_quibuild_2024';
+const JWT_SECRET = 'mi_clave_secreta_2q_2024';
 
 // Controlador de login
 exports.login = (req, res) => {

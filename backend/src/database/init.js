@@ -1,7 +1,7 @@
 const db = require('./db');
 const bcrypt = require('bcryptjs');
 
-// Crear tabla de usuarios
+// Crear tablas
 db.serialize(() => {
   // Tabla usuarios
   db.run(`
@@ -21,17 +21,36 @@ db.serialize(() => {
     }
   });
 
-  // Tabla equipos
+  // Tabla tipos_equipos (NUEVA)
   db.run(`
-    CREATE TABLE IF NOT EXISTS equipos (
+    CREATE TABLE IF NOT EXISTS tipos_equipos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
       tipo TEXT NOT NULL,
       marca TEXT,
       modelo TEXT,
-      numero_serie TEXT UNIQUE,
-      estado TEXT DEFAULT 'disponible',
+      descripcion TEXT,
+      foto TEXT,
       creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error al crear tabla tipos_equipos:', err.message);
+    } else {
+      console.log('✅ Tabla tipos_equipos creada correctamente');
+    }
+  });
+
+  // Tabla equipos (MODIFICADA)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS equipos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo_equipo_id INTEGER NOT NULL,
+      numero_serie TEXT UNIQUE NOT NULL,
+      estado TEXT DEFAULT 'disponible',
+      observaciones TEXT,
+      creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tipo_equipo_id) REFERENCES tipos_equipos(id)
     )
   `, (err) => {
     if (err) {
@@ -88,24 +107,53 @@ db.serialize(() => {
   db.run(`
     INSERT OR IGNORE INTO usuarios (nombre, correo, contraseña, rol)
     VALUES (?, ?, ?, ?)
-  `, ['Administrador', 'admin@quibuild.com', contraseñaHash, 'admin'], (err) => {
+  `, ['Administrador', 'admin@2q.com', contraseñaHash, 'admin'], (err) => {
     if (err) {
       console.error('Error al insertar usuario de prueba:', err.message);
     } else {
       console.log('✅ Usuario de prueba creado');
-      console.log('   Correo: admin@quibuild.com');
+      console.log('   Correo: admin@2q.com');
       console.log('   Contraseña: 1234');
+    }
+  });
+
+  // Insertar datos de ejemplo
+  db.run(`
+    INSERT OR IGNORE INTO tipos_equipos (id, nombre, tipo, marca, modelo, descripcion, foto)
+    VALUES 
+      (1, 'GPS Trimble R10', 'GPS', 'Trimble', 'R10', 'GPS de alta precisión con tecnología GNSS', 'gps_trimble.jpg'),
+      (2, 'Estación Total Leica TS16', 'Estación Total', 'Leica', 'TS16', 'Estación total robótica de última generación', 'estacion_leica.jpg')
+  `, (err) => {
+    if (err) {
+      console.log('   Tipos de equipos ya existían');
+    } else {
+      console.log('✅ Tipos de equipos de ejemplo creados');
+    }
+  });
+
+  db.run(`
+    INSERT OR IGNORE INTO equipos (tipo_equipo_id, numero_serie, estado)
+    VALUES 
+      (1, 'GPS-001', 'disponible'),
+      (1, 'GPS-002', 'disponible'),
+      (1, 'GPS-003', 'alquilado'),
+      (2, 'EST-001', 'disponible')
+  `, (err) => {
+    if (err) {
+      console.log('   Equipos ya existían');
+    } else {
+      console.log('✅ Equipos de ejemplo creados');
     }
   });
 });
 
-// Cerrar conexión después de crear todo
+// Cerrar conexión
 setTimeout(() => {
   db.close((err) => {
     if (err) {
       console.error('Error al cerrar la base de datos:', err.message);
     } else {
-      console.log('Base de datos inicializada correctamente');
+      console.log('\n🎉 Base de datos inicializada correctamente\n');
     }
   });
-}, 1000);
+}, 1500);
