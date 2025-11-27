@@ -41,12 +41,14 @@ db.serialize(() => {
     }
   });
 
-  // Tabla equipos (MODIFICADA)
+  
+// Tabla equipos (MODIFICADA)
   db.run(`
     CREATE TABLE IF NOT EXISTS equipos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tipo_equipo_id INTEGER NOT NULL,
       numero_serie TEXT UNIQUE NOT NULL,
+      variante TEXT,
       estado TEXT DEFAULT 'disponible',
       observaciones TEXT,
       creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -117,34 +119,34 @@ db.serialize(() => {
     }
   });
 
-  // Insertar datos de ejemplo
-  db.run(`
-    INSERT OR IGNORE INTO tipos_equipos (id, nombre, tipo, marca, modelo, descripcion, foto)
-    VALUES 
-      (1, 'GPS Trimble R10', 'GPS', 'Trimble', 'R10', 'GPS de alta precisión con tecnología GNSS', 'gps_trimble.jpg'),
-      (2, 'Estación Total Leica TS16', 'Estación Total', 'Leica', 'TS16', 'Estación total robótica de última generación', 'estacion_leica.jpg')
-  `, (err) => {
-    if (err) {
-      console.log('   Tipos de equipos ya existían');
-    } else {
-      console.log('✅ Tipos de equipos de ejemplo creados');
-    }
-  });
+  // // Insertar datos de ejemplo
+  // db.run(`
+  //   INSERT OR IGNORE INTO tipos_equipos (id, nombre, tipo, marca, modelo, descripcion, foto)
+  //   VALUES 
+  //     (1, 'GPS Trimble R10', 'GPS', 'Trimble', 'R10', 'GPS de alta precisión con tecnología GNSS', 'gps_trimble.jpg'),
+  //     (2, 'Estación Total Leica TS16', 'Estación Total', 'Leica', 'TS16', 'Estación total robótica de última generación', 'estacion_leica.jpg')
+  // `, (err) => {
+  //   if (err) {
+  //     console.log('   Tipos de equipos ya existían');
+  //   } else {
+  //     console.log('✅ Tipos de equipos de ejemplo creados');
+  //   }
+  // });
 
-  db.run(`
-    INSERT OR IGNORE INTO equipos (tipo_equipo_id, numero_serie, estado)
-    VALUES 
-      (1, 'GPS-001', 'disponible'),
-      (1, 'GPS-002', 'disponible'),
-      (1, 'GPS-003', 'alquilado'),
-      (2, 'EST-001', 'disponible')
-  `, (err) => {
-    if (err) {
-      console.log('   Equipos ya existían');
-    } else {
-      console.log('✅ Equipos de ejemplo creados');
-    }
-  });
+  // db.run(`
+  //   INSERT OR IGNORE INTO equipos (tipo_equipo_id, numero_serie, estado)
+  //   VALUES 
+  //     (1, 'GPS-001', 'disponible'),
+  //     (1, 'GPS-002', 'disponible'),
+  //     (1, 'GPS-003', 'alquilado'),
+  //     (2, 'EST-001', 'disponible')
+  // `, (err) => {
+  //   if (err) {
+  //     console.log('   Equipos ya existían');
+  //   } else {
+  //     console.log('✅ Equipos de ejemplo creados');
+  //   }
+  // });
 });
 
 // Cerrar conexión

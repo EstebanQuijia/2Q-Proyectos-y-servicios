@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const authRoutes = require('./src/routes/authRoutes');
 const inventarioRoutes = require('./src/routes/inventarioRoutes');
+const equiposRoutes = require('./src/routes/equiposRoutes');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // Rutas de la API
 app.use('/api', authRoutes);
 app.use('/api', inventarioRoutes);
+app.use('/api', equiposRoutes);
 
 
 

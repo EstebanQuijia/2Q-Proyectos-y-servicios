@@ -26,10 +26,9 @@
       box-shadow: 0 5px 20px rgba(0,0,0,0.15);
     }
 
-    .equipo-foto {
+  .equipo-foto {
       width: 100%;
-      height: 200px;
-      object-fit: cover;
+      height: 250px;
       border-radius: 8px;
       background: #f0f0f0;
       display: flex;
@@ -37,6 +36,15 @@
       justify-content: center;
       color: #999;
       margin-bottom: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .equipo-foto img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
     }
 
     .equipo-info h3 {
