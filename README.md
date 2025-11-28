@@ -6,7 +6,7 @@ Sistema web desarrollado para **2Q Proyectos y Servicios** que permite gestionar
 
 ## 🧑‍🎓 Datos del Estudiante
 - **Autor:** Esteban Quijia  
-- **Carrera:** Ingeniería en Sistemas / Desarrollo de Software  
+- **Carrera:** Desarrollo de Software  
 - **Docente:** Jonathan Quespaz  
 - **Período:** 2025  
 
