@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2Q Proyectos y servicios - Sistema de Gestión</title>
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargando...</title>
+    <style>
+        /* CSS simple para que la pantalla no se vea vacía mientras redirige */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">
-      <h1>2Q Proyectos y servicios</h1>
-      <p>Sistema de Gestión de Inventario</p>
-    </div>
+    <h1>Redirigiendo...</h1>
 
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="correo">Correo electrónico</label>
-        <input type="email" id="correo" placeholder="admin@2q.com" required>
-      </div>
-
-      <div class="form-group">
-        <label for="contraseña">Contraseña</label>
-        <input type="password" id="contraseña" placeholder="••••••••" required>
-      </div>
-
-      <div id="mensajeError"></div>
-
-      <button type="submit" class="btn">Iniciar Sesión</button>
-    </form>
-  </div>
-
-  <script src="js/login.js"></script>
+    <script>
+        // 1. Verificar si el usuario ya está autenticado
+        if (localStorage.getItem('token')) {
+            // Si está logeado, redirigir al dashboard
+            window.location.href = 'inicio.html';
+        } else {
+            // Si no está logeado, redirigir a la página de login
+            window.location.href = 'login.html';
+        }
+    </script>
 </body>
 </html>

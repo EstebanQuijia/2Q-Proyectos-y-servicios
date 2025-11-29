@@ -1,191 +1,211 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Equipos - 2Q Proyectos</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 30px;
-      border-bottom: 2px solid #e0e0e0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Equipos - 2Q Proyectos</title>
+    
+    <!-- Bootstrap CSS (Necesario para los estilos de la Navbar) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        /* TABS STYLES - Tu CSS para la navegación de pestañas */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
 
-    .tab {
-      padding: 15px 30px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      color: #666;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s;
-    }
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
 
-    .tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
-      font-weight: 600;
-    }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
 
-    .tab-content {
-      display: none;
-    }
+        .tab-content {
+            display: none;
+        }
 
-    .tab-content.active {
-      display: block;
-    }
+        .tab-content.active {
+            display: block;
+        }
 
-    .form-container {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      max-width: 600px;
-    }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+        }
+        
+        /* Grid de dos columnas para formularios */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
+        /* Estilos de la vista previa de la imagen */
+        .preview-imagen {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            overflow: hidden;
+        }
 
-    .preview-imagen {
-      width: 100%;
-      max-width: 300px;
-      height: 200px;
-      border: 2px dashed #ddd;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 10px;
-      overflow: hidden;
-    }
-
-    .preview-imagen img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  </style>
+        .preview-imagen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body class="dashboard">
-  <nav class="navbar">
-    <h1>2Q Proyectos y Servicios</h1>
-    <div>
-      <button class="btn" onclick="location.href='inicio.html'">Inicio</button>
-      <button class="btn" onclick="location.href='inventario.html'">Inventario</button>
-      <button class="btn btn-secondary" onclick="cerrarSesion()">Cerrar Sesión</button>
-    </div>
-  </nav>
 
-  <div class="content">
-    <h2>Gestión de Equipos</h2>
+    <!-- La Navbar se inyectará AQUÍ (arriba de todo) por js/navbar.js -->
 
-    <div class="tabs">
-      <button class="tab active" onclick="cambiarTab('tipo')">Agregar Tipo de Equipo</button>
-      <button class="tab" onclick="cambiarTab('unidad')">Agregar Unidad Individual</button>
-    </div>
+    <div class="content">
+        <h2 class="text-center">Gestión de Equipos</h2>
 
-    <!-- TAB 1: Agregar Tipo de Equipo -->
-    <div id="tab-tipo" class="tab-content active">
-      <div class="form-container">
-        <h3>Nuevo Tipo de Equipo</h3>
-        <form id="formTipoEquipo">
-          <div class="form-group">
-            <label for="nombre">Nombre del Equipo *</label>
-            <input type="text" id="nombre" placeholder="Ej: GPS Trimble R10" required>
-          </div>
+        <div class="tabs">
+            <!-- Funciones llamadas por JS -->
+            <button class="tab active" onclick="cambiarTab('tipo')">Agregar Tipo de Equipo</button>
+            <button class="tab" onclick="cambiarTab('unidad')">Agregar Unidad Individual</button>
+        </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="tipo">Tipo *</label>
-              <select id="tipo" required>
-                <option value="">Selecciona...</option>
-                <option value="GPS">GPS</option>
-                <option value="Estación Total">Estación Total</option>
-                <option value="Nivel">Nivel</option>
-                <option value="Teodolito">Teodolito</option>
-                <option value="Bastón">Bastón</option>
-                <option value="Prisma">Prisma</option>
-                <option value="Trípode">Trípode</option>
-                <option value="Otro">Otro</option>
-              </select>
+        <!-- TAB 1: Agregar Tipo de Equipo -->
+        <div id="tab-tipo" class="tab-content active">
+            <div class="form-container">
+                <h3>Nuevo Tipo de Equipo</h3>
+                <form id="formTipoEquipo">
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Equipo *</label>
+                        <input type="text" id="nombre" placeholder="Ej: GPS Trimble R10" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipo">Tipo *</label>
+                            <select id="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="GPS">GPS</option>
+                                <option value="Estación Total">Estación Total</option>
+                                <option value="Nivel">Nivel</option>
+                                <option value="Teodolito">Teodolito</option>
+                                <option value="Bastón">Bastón</option>
+                                <option value="Prisma">Prisma</option>
+                                <option value="Trípode">Trípode</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="marca">Marca</label>
+                            <input type="text" id="marca" placeholder="Ej: Trimble">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modelo">Modelo</label>
+                        <input type="text" id="modelo" placeholder="Ej: R10">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" rows="3" placeholder="Características principales..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="foto">Foto del Equipo</label>
+                        <input type="file" id="foto" accept="image/*" onchange="previsualizarImagen(event)">
+                        <div class="preview-imagen" id="preview">
+                            <span>Vista previa</span>
+                        </div>
+                    </div>
+
+                    <div id="mensajeTipo"></div>
+
+                    <button type="submit" class="btn">Guardar Tipo de Equipo</button>
+                </form>
             </div>
+        </div>
 
-            <div class="form-group">
-              <label for="marca">Marca</label>
-              <input type="text" id="marca" placeholder="Ej: Trimble">
+        <!-- TAB 2: Agregar Unidad Individual -->
+        <div id="tab-unidad" class="tab-content">
+            <div class="form-container">
+                <h3>Nueva Unidad Individual</h3>
+                <form id="formUnidadEquipo">
+                    <div class="form-group">
+                        <label for="tipoEquipo">Selecciona el Tipo de Equipo *</label>
+                        <select id="tipoEquipo" required>
+                            <option value="">Cargando tipos...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="variante">Variante / Especificación (opcional)</label>
+                        <input type="text" id="variante" placeholder="Ej: 2m, 2.5m, Rojo, etc.">
+                        <small style="color: #666; font-size: 12px;">
+                            <!-- Útil para equipos con diferentes medidas o características -->
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numeroSerie">Número de Serie *</label>
+                        <input type="text" id="numeroSerie" placeholder="Ej: GPS-001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="estado">Estado</label>
+                        <select id="estado">
+                            <option value="disponible">Disponible</option>
+                            <option value="mantenimiento">En Mantenimiento</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea id="observaciones" rows="3" placeholder="Algún detalle particular de esta unidad..."></textarea>
+                    </div>
+
+                    <div id="mensajeUnidad"></div>
+
+                    <button type="submit" class="btn">Guardar Unidad</button>
+                </form>
             </div>
-          </div>
+        </div>
 
-          <div class="form-group">
-            <label for="modelo">Modelo</label>
-            <input type="text" id="modelo" placeholder="Ej: R10">
-          </div>
-
-          <div class="form-group">
-            <label for="descripcion">Descripción</label>
-            <textarea id="descripcion" rows="3" placeholder="Características principales..."></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="foto">Foto del Equipo</label>
-            <input type="file" id="foto" accept="image/*" onchange="previsualizarImagen(event)">
-            <div class="preview-imagen" id="preview">
-              <span>Vista previa</span>
-            </div>
-          </div>
-
-          <div id="mensajeTipo"></div>
-
-          <button type="submit" class="btn">Guardar Tipo de Equipo</button>
-        </form>
-      </div>
     </div>
 
-    <!-- TAB 2: Agregar Unidad Individual -->
-    <div id="tab-unidad" class="tab-content">
-      <div class="form-container">
-        <h3>Nueva Unidad Individual</h3>
-        <form id="formUnidadEquipo">
-          <div class="form-group">
-            <label for="tipoEquipo">Selecciona el Tipo de Equipo *</label>
-            <select id="tipoEquipo" required>
-              <option value="">Cargando tipos...</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="numeroSerie">Número de Serie *</label>
-            <input type="text" id="numeroSerie" placeholder="Ej: GPS-001" required>
-          </div>
-
-          <div class="form-group">
-            <label for="estado">Estado</label>
-            <select id="estado">
-              <option value="disponible">Disponible</option>
-              <option value="mantenimiento">En Mantenimiento</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="observaciones">Observaciones</label>
-            <textarea id="observaciones" rows="3" placeholder="Algún detalle particular de esta unidad..."></textarea>
-          </div>
-
-          <div id="mensajeUnidad"></div>
-
-          <button type="submit" class="btn">Guardar Unidad</button>
-        </form>
-      </div>
-    </div>
-
-  </div>
-
-  <script src="js/gestion-equipos.js"></script>
+    <!-- SCRIPTS OBLIGATORIOS -->
+    <!-- 1. Carga Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 2. Carga la Navbar (que inyecta la barra de navegación) -->
+    <script src="js/navbar.js"></script>
+    
+    <!-- 3. Lógica de Gestión de Equipos -->
+    <script src="js/gestion-equipos.js"></script>
 </body>
 </html>

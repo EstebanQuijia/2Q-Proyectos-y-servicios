@@ -11,7 +11,8 @@ if (usuario) {
 
 // Función para cerrar sesión
 function cerrarSesion() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('usuario');
-  window.location.href = 'login.html';
+  localStorage.removeItem('token');
+  localStorage.removeItem('usuario');
+  // Redirigimos a la raíz (asumiendo que es la página de login)
+  window.location.href = '/'; 
 }

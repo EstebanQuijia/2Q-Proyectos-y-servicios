@@ -5,16 +5,23 @@
   box-sizing: border-box;
 }
 
+/* ESTILOS DEL BODY GLOBAL - Limpio, solo define la fuente */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-/* Contenedor principal */
+/* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE LOGIN (Asumiendo que usas <body class="login">) */
+/* Si usas la clase 'container' en el body, esto asegura que el login se centre */
+body.login {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+}
+
+
+/* Contenedor principal para LOGIN */
 .container {
   background: white;
   padding: 40px;
@@ -24,14 +31,14 @@ body {
   width: 90%;
 }
 
-/* Logo y encabezado */
+/* Logo, formularios, botones, mensajes (sin cambios) */
 .logo {
   text-align: center;
   margin-bottom: 30px;
 }
 
 .logo h1 {
-  color: #667eea;
+  color: #333; /* Cambiado a un color oscuro para contraste en fondo blanco */
   font-size: 32px;
   margin-bottom: 5px;
 }
@@ -41,7 +48,7 @@ body {
   font-size: 14px;
 }
 
-/* Formularios */
+/* Formularios - Estilos CLAVE para la vista "moderna" */
 .form-group {
   margin-bottom: 20px;
 }
@@ -53,22 +60,29 @@ body {
   font-weight: 500;
 }
 
-.form-group input {
-  width: 100%;
+/* CORRECCIÓN: Usar selectores más específicos para forzar 100% de ancho */
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+  width: 100%; /* ¡CLAVE para que llenen el contenedor! */
   padding: 12px 15px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px; /* Aumentado a 16px para mejor visualización móvil */
   transition: all 0.3s ease;
+  /* Asegura que el width del 100% incluya el padding */
+  box-sizing: border-box; 
 }
 
-.form-group input:focus {
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-/* Botones */
+/* Botones (sin cambios, ya se ven bien) */
 .btn {
   width: 100%;
   padding: 12px;
@@ -100,7 +114,7 @@ body {
   box-shadow: 0 5px 20px rgba(220, 53, 69, 0.4);
 }
 
-/* Mensajes */
+/* Mensajes (sin cambios) */
 .mensaje {
   padding: 12px;
   border-radius: 8px;
@@ -124,24 +138,24 @@ body {
 /* Dashboard */
 .dashboard {
   background: #f5f7fa;
+  width: 100%; 
   min-height: 100vh;
   padding: 0;
   margin: 0;
 }
 
+/* Navbar (sin cambios) */
 .navbar {
-  background: white;
-  padding: 20px 40px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%; 
 }
 
-.navbar h1 {
-  color: #667eea;
-  font-size: 24px;
-}
+/* ... (El resto de estilos de navbar y content permanecen) ... */
 
 .content {
   max-width: 1200px;
