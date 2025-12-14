@@ -20,6 +20,9 @@ function cargarNavbar() {
             <li class="nav-item">
               <a class="nav-link" href="inventario.html" id="nav-inventario">Inventario</a>
             </li>
+            <li class="nav-item"> 
+              <a class="nav-link" href="clientes.html" id="nav-clientes">Clientes</a>
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="gestion-equipos.html" id="nav-gestion">Gestionar Equipos</a>
             </li>
@@ -41,6 +44,8 @@ function cargarNavbar() {
     document.getElementById('nav-inicio').classList.add('active');
   } else if (pagina.includes('inventario')) {
     document.getElementById('nav-inventario').classList.add('active');
+  } else if (pagina.includes('clientes')) { 
+    document.getElementById('nav-clientes').classList.add('active');
   } else if (pagina.includes('gestion')) {
     document.getElementById('nav-gestion').classList.add('active');
   }
@@ -50,6 +55,7 @@ function cargarNavbar() {
 function cerrarSesion() {
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
+  localStorage.removeItem('carritoAlquiler');
   window.location.href = '/';
 }
 

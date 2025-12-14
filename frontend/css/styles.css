@@ -191,3 +191,11 @@ body.login {
     padding: 15px 20px;
   }
 }
+
+.navbar .navbar-nav .nav-item .nav-link.active {
+    /* Forzar que el texto y el padding sean los mismos que los inactivos */
+    color: white !important; 
+    /* Agregar un pequeño subrayado o fondo sutil para indicar activo */
+    border-bottom: 3px solid white; 
+    padding-bottom: 12px; /* Ajuste para compensar el borde */
+}

@@ -62,7 +62,7 @@ async function cargarInventario() {
 
 // Ver unidades específicas
 function verUnidades(tipoId) {
-  window.location.href = `detalle-equipo.html?id=${tipoId}`;
+  window.location.href = `detalle-equipos.html?id=${tipoId}`;
 }
 
 // Cargar al iniciar

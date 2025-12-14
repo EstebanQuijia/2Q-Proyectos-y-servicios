@@ -4,6 +4,7 @@ const path = require('path');
 const authRoutes = require('./src/routes/authRoutes');
 const inventarioRoutes = require('./src/routes/inventarioRoutes');
 const equiposRoutes = require('./src/routes/equiposRoutes');
+const clientesRoutes = require('./src/routes/clientesRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api', authRoutes);
 app.use('/api', inventarioRoutes);
 app.use('/api', equiposRoutes);
+app.use('/api', clientesRoutes);
 
 
 
