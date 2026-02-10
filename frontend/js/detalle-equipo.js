@@ -59,6 +59,7 @@ async function cargarUnidades() {
                     ...(s.receptores || []),
                     ...(s.colectores || []),
                     ...(s.bastones || []),
+                    ...(s.tripodes || []), // Incluimos trípodes en la búsqueda
                     ...(s.otros || []),
                     ...(s.extras || []).map(e => e.id)
                 ];
@@ -100,24 +101,40 @@ async function cargarUnidades() {
     }
 }
 
+/**
+ * LÓGICA DE AGREGAR AL CARRITO (CORREGIDA)
+ * Clasifica automáticamente cualquier equipo y detecta extras.
+ */
 function agregarAlCarrito(id, numeroSerie) {
     let config = JSON.parse(localStorage.getItem('configAlquiler'));
     if (!config) return;
 
+    // Obtenemos textos descriptivos para clasificar
     const nombre = document.getElementById('nombreTipo').textContent.toLowerCase();
+    const tipoCat = document.getElementById('tipoEquipo').textContent.toLowerCase();
+    
     let cat = "otros";
 
-    if (nombre.includes('receptor') || nombre.includes('gps')) cat = "receptores";
-    else if (nombre.includes('colector') || nombre.includes('celular')) cat = "colectores";
-    else if (nombre.includes('bastón') || nombre.includes('baston')) cat = "bastones";
+    // Clasificación universal
+    if (nombre.includes('receptor') || nombre.includes('gps') || tipoCat.includes('receptor')) {
+        cat = "receptores";
+    } else if (nombre.includes('colector') || nombre.includes('celular') || tipoCat.includes('colector')) {
+        cat = "colectores";
+    } else if (nombre.includes('bastón') || nombre.includes('baston') || tipoCat.includes('bastón')) {
+        cat = "bastones";
+    } else if (nombre.includes('trípode') || nombre.includes('tripode') || tipoCat.includes('trípode')) {
+        cat = "tripodes";
+    }
 
-    // Inicializar arrays si no existen
+    // Aseguramos que existan los arrays en la configuración
     if (!config.seleccionados[cat]) config.seleccionados[cat] = [];
     if (!config.seleccionados.extras) config.seleccionados.extras = [];
 
+    // Verificamos el límite del plan para esa categoría
     const limite = config.minimos[cat] || 0;
     
-    if (cat !== "otros" && config.seleccionados[cat].length >= limite) {
+    // Si ya alcanzamos el límite o la categoría no está en el plan base, es un EXTRA
+    if (config.seleccionados[cat].length >= limite) {
         config.seleccionados.extras.push({ id, numeroSerie, tipoNombre: nombre });
     } else {
         config.seleccionados[cat].push(id);
@@ -125,6 +142,8 @@ function agregarAlCarrito(id, numeroSerie) {
 
     localStorage.setItem('configAlquiler', JSON.stringify(config));
     cargarUnidades();
+    
+    // Dispara la actualización de la barra de progreso en inventario.js
     if (typeof renderizarBarraProgreso === 'function') renderizarBarraProgreso();
 }
 
@@ -132,16 +151,18 @@ function quitarDelCarrito(id) {
     let config = JSON.parse(localStorage.getItem('configAlquiler'));
     if (!config) return;
 
-    // Limpiar de todas las listas posibles
     const s = config.seleccionados;
+    // Limpiamos de todas las listas posibles para asegurar la deselección
     s.receptores = (s.receptores || []).filter(i => i !== id);
     s.colectores = (s.colectores || []).filter(i => i !== id);
     s.bastones = (s.bastones || []).filter(i => i !== id);
+    s.tripodes = (s.tripodes || []).filter(i => i !== id);
     s.otros = (s.otros || []).filter(i => i !== id);
     s.extras = (s.extras || []).filter(i => i.id !== id);
 
     localStorage.setItem('configAlquiler', JSON.stringify(config));
     cargarUnidades();
+    
     if (typeof renderizarBarraProgreso === 'function') renderizarBarraProgreso();
 }
 

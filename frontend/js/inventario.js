@@ -14,7 +14,7 @@ function cerrarSesion() {
   window.location.href = '/';
 }
 
-// 2. RENDERIZAR BARRA DE PROGRESO SUPERIOR
+// 2. RENDERIZAR BARRA DE PROGRESO SUPERIOR (LÓGICA FLEXIBLE)
 function renderizarBarraProgreso() {
   configAlquiler = JSON.parse(localStorage.getItem('configAlquiler'));
   if (!configAlquiler) return;
@@ -35,32 +35,50 @@ function renderizarBarraProgreso() {
   const bas = seleccionados.bastones || [];
   const ext = seleccionados.extras || [];
 
+  // Verificamos cumplimiento de mínimos
   const listoReceptores = rec.length >= minimos.receptores;
   const listoColectores = col.length >= minimos.colectores;
   const listoBastones = bas.length >= minimos.bastones;
-  const todoListo = listoReceptores && listoColectores && listoBastones;
+  
+  // Variable para el popup de advertencia
+  const todoCompleto = listoReceptores && listoColectores && listoBastones;
 
   barra.innerHTML = `
     <div class="container-fluid d-flex justify-content-between align-items-center">
       <div>
         <span class="text-warning fw-bold me-3">${configAlquiler.nombrePlan.toUpperCase()}</span>
-        <span class="me-3">Receptores: <strong class="${listoReceptores ? 'text-success' : 'text-white'}">${rec.length}/${minimos.receptores}</strong></span>
-        <span class="me-3">Colectores: <strong class="${listoColectores ? 'text-success' : 'text-white'}">${col.length}/${minimos.colectores}</strong></span>
-        <span class="me-3">Bastones: <strong class="${listoBastones ? 'text-success' : 'text-white'}">${bas.length}/${minimos.bastones}</strong></span>
-        ${ext.length > 0 ? `<span class="badge bg-warning text-dark"> +${ext.length} EXTRA(S)</span>` : ''}
+        <span class="me-3">Receptores: <strong class="${listoReceptores ? 'text-success' : 'text-danger'}">${rec.length}/${minimos.receptores}</strong></span>
+        <span class="me-3">Colectores: <strong class="${listoColectores ? 'text-success' : 'text-danger'}">${col.length}/${minimos.colectores}</strong></span>
+        <span class="me-3">Bastones: <strong class="${listoBastones ? 'text-success' : 'text-danger'}">${bas.length}/${minimos.bastones}</strong></span>
+        ${ext.length > 0 ? `<span class="badge bg-info text-dark ms-2"> +${ext.length} EXTRA(S)</span>` : ''}
       </div>
       <div>
         <button class="btn btn-outline-light btn-sm me-2" style="font-size: 0.75rem" onclick="cancelarSeleccion()">CANCELAR</button>
-        <button class="btn ${todoListo ? 'btn-success fw-bold' : 'btn-secondary'} btn-sm" 
+        <button class="btn btn-success fw-bold btn-sm" 
                 style="font-size: 0.75rem"
-                ${todoListo ? '' : 'disabled'} 
-                onclick="irAResumen()">
-          ${todoListo ? 'FINALIZAR SELECCIÓN' : 'PENDIENTE'}
+                onclick="confirmarYPasar(${todoCompleto})">
+          FINALIZAR SELECCIÓN
         </button>
       </div>
     </div>
   `;
   document.body.prepend(barra);
+}
+
+/**
+ * LÓGICA DE VALIDACIÓN ANTES DE PASAR AL RESUMEN
+ * Si el kit está incompleto, lanza el mensaje de advertencia.
+ */
+function confirmarYPasar(estaCompleto) {
+    if (estaCompleto) {
+        irAResumen();
+    } else {
+        // Mensaje de advertencia consistente con el estilo de administracion.js
+        const mensaje = "⚠️ EL KIT DE ALQUILER ESTÁ INCOMPLETO.\n\n¿Estás seguro de que deseas continuar hacia el resumen de todas formas?";
+        if (confirm(mensaje)) {
+            irAResumen();
+        }
+    }
 }
 
 // 3. CARGAR INVENTARIO CON DESCUENTO Y COLORES
@@ -82,6 +100,7 @@ async function cargarInventario() {
             ...(s.receptores || []),
             ...(s.colectores || []),
             ...(s.bastones || []),
+            ...(s.tripodes || []), // Incluir trípodes en el descuento visual
             ...(s.otros || []),
             ...(s.extras || []).map(e => e.id)
         ];
@@ -97,14 +116,14 @@ async function cargarInventario() {
       const disponiblesVisual = (tipo.disponibles || 0) - unidadesEnUso;
 
       // --- ASIGNACIÓN DE COLORES DINÁMICOS ---
-      let colorFondo = "#d4edda"; // Verde por defecto (3 o más)
+      let colorFondo = "#d4edda"; 
       let colorTexto = "#155724";
 
       if (disponiblesVisual <= 0) {
-        colorFondo = "#f8d7da"; // Rojo (0 unidades)
+        colorFondo = "#f8d7da"; 
         colorTexto = "#721c24";
       } else if (disponiblesVisual >= 1 && disponiblesVisual <= 2) {
-        colorFondo = "#fff3cd"; // Amarillo (1 o 2 unidades)
+        colorFondo = "#fff3cd"; 
         colorTexto = "#856404";
       }
 
