@@ -5,6 +5,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const inventarioRoutes = require('./src/routes/inventarioRoutes');
 const equiposRoutes = require('./src/routes/equiposRoutes');
 const clientesRoutes = require('./src/routes/clientesRoutes');
+const alquilerRoutes = require('./src/routes/alquilerRoutes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api', authRoutes);
 app.use('/api', equiposRoutes);
 app.use('/api', inventarioRoutes);
 app.use('/api', clientesRoutes);
+app.use('/api', alquilerRoutes);
 
 
 

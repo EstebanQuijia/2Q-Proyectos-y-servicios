@@ -15,9 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     renderizarEquipos();
     buscarClientes(); 
+
+    // Inicializar el escucha del formulario del Modal
+    const formRapido = document.getElementById('formClienteRapido');
+    if (formRapido) {
+        formRapido.addEventListener('submit', registrarClienteRapido);
+    }
 });
 
-// RENDERIZAR EQUIPOS CON FORMATO DE ACTA (Basado en Excel de 2Q)
+// 1. RENDERIZAR EQUIPOS CON FORMATO DE ACTA
 async function renderizarEquipos() {
     const container = document.getElementById('listaEquiposResumen');
     if (!container) return;
@@ -25,29 +31,29 @@ async function renderizarEquipos() {
 
     const s = config.seleccionados;
 
-    const categorias = {
+    const categoriasMapeo = {
         receptores: "RECEPTOR GNSS MARCA 2Q DE DOBLE FRECUENCIA",
         colectores: "COLECTOR CON SURPAD 4.2 (Incluye 1 power bank y 1 cable usb tipo C)",
         bastones: "BASTON DE 4.5M",
         tripodes: "SOPORTE DE COLECTOR"
     };
 
-    // 1. Renderizar Equipos Base del Plan
-    Object.keys(categorias).forEach(cat => {
+    // Renderizar Equipos Base del Plan
+    Object.keys(categoriasMapeo).forEach(cat => {
         if (s[cat] && s[cat].length > 0) {
-            s[cat].forEach(id => {
+            s[cat].forEach(equipo => {
                 const item = document.createElement('div');
                 item.className = 'item-alquiler d-flex justify-content-between align-items-center mb-2 p-2 bg-light border-start border-primary';
                 item.innerHTML = `
-                    <span><strong>1</strong> ${categorias[cat]} (ID #${id})</span>
-                    <span class="text-muted small">Incluido</span>
+                    <span><strong>1</strong> ${categoriasMapeo[cat]}</span>
+                    <span class="badge bg-dark">Serie: ${equipo.numeroSerie}</span>
                 `;
                 container.appendChild(item);
             });
         }
     });
 
-    // 2. Renderizar Extras
+    // Renderizar Extras
     if (s.extras && s.extras.length > 0) {
         s.extras.forEach(extra => {
             const item = document.createElement('div');
@@ -57,8 +63,9 @@ async function renderizarEquipos() {
             item.innerHTML = `
                 <span>
                     <span class="badge bg-info text-dark me-2">EXTRA</span>
-                    <strong>1</strong> ${nombreFormateado} (Serie: ${extra.numeroSerie})
+                    <strong>1</strong> ${nombreFormateado}
                 </span>
+                <span class="badge bg-dark">Serie: ${extra.numeroSerie}</span>
             `;
             container.appendChild(item);
         });
@@ -69,13 +76,13 @@ async function renderizarEquipos() {
     }
 }
 
-// BUSCAR CLIENTES EN LA API
+// 2. BUSCAR CLIENTES EN LA API
 async function buscarClientes() {
     const busquedaInput = document.getElementById('buscarCliente');
     const busqueda = busquedaInput ? busquedaInput.value : '';
     
     try {
-        const res = await fetch(`/api/clientes?busqueda=${busqueda}`);
+        const res = await fetch(`/api/clientes?busqueda=${encodeURIComponent(busqueda)}`);
         const clientes = await res.json();
         const select = document.getElementById('selectCliente');
         if (!select) return;
@@ -86,7 +93,6 @@ async function buscarClientes() {
             const option = document.createElement('option');
             option.value = c.id;
             option.textContent = `${c.nombre} (${c.cedula})`;
-            // Evento para seleccionar
             option.addEventListener('click', () => seleccionarCliente(c));
             select.appendChild(option);
         });
@@ -98,31 +104,78 @@ function seleccionarCliente(c) {
     document.getElementById('nombreCli').textContent = c.nombre;
     document.getElementById('cedulaCli').textContent = c.cedula;
     config.clienteId = c.id;
-    config.clienteNombre = c.nombre; // Guardamos para el acta
+    config.clienteNombre = c.nombre; 
 }
 
-// PROCESAR TODO EL ALQUILER (CONEXIÓN REAL AL BACKEND)
+// 3. REGISTRO RÁPIDO DE CLIENTE (DESDE EL MODAL)
+async function registrarClienteRapido(e) {
+    e.preventDefault();
+
+    const datos = {
+        nombre: document.getElementById('m-nombre').value,
+        cedula: document.getElementById('m-cedula').value,
+        telefono: document.getElementById('m-telefono').value,
+        correo: document.getElementById('m-correo').value,
+        direccion: "Registrado desde flujo de alquiler"
+    };
+
+    try {
+        const res = await fetch('/api/clientes', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("✅ Cliente registrado y seleccionado correctamente.");
+            
+            // Cerrar el modal usando la instancia de Bootstrap
+            const modalEl = document.getElementById('modalNuevoCliente');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+
+            // Limpiar formulario del modal
+            document.getElementById('formClienteRapido').reset();
+
+            // Refrescar lista y seleccionar al nuevo cliente automáticamente
+            await buscarClientes();
+            seleccionarCliente({ id: data.id, nombre: datos.nombre, cedula: datos.cedula });
+
+        } else {
+            alert("❌ Error: " + data.mensaje);
+        }
+    } catch (error) {
+        console.error("Error en registro rápido:", error);
+        alert("Error al conectar con el servidor.");
+    }
+}
+
+// 4. PROCESAR TODO EL ALQUILER (CONEXIÓN REAL AL BACKEND)
 async function procesarAlquiler() {
     if (!config.clienteId) return alert("Por favor, selecciona un cliente.");
 
     const fechaFin = document.getElementById('fechaFin').value;
     if (!fechaFin) return alert("Selecciona la fecha de finalización.");
 
-    // Recolectamos todos los IDs de equipos seleccionados
     const s = config.seleccionados;
     const equiposIds = [
-        ...(s.receptores || []),
-        ...(s.colectores || []),
-        ...(s.bastones || []),
-        ...(s.tripodes || []),
-        ...(s.otros || []),
+        ...(s.receptores || []).map(e => e.id),
+        ...(s.colectores || []).map(e => e.id),
+        ...(s.bastones || []).map(e => e.id),
+        ...(s.tripodes || []).map(e => e.id),
+        ...(s.otros || []).map(e => e.id),
         ...(s.extras || []).map(e => e.id)
     ];
 
     const datosAlquiler = {
         clienteId: config.clienteId,
         equiposIds: equiposIds,
-        fechaInicio: config.fechaInicio,
+        fechaInicio: document.getElementById('fechaInicio').value,
         fechaFin: fechaFin,
         observaciones: `Plan: ${config.nombrePlan}`
     };
@@ -141,7 +194,6 @@ async function procesarAlquiler() {
 
         if (res.ok) {
             alert("✅ " + data.mensaje);
-            // Limpiar selección y volver
             localStorage.removeItem('configAlquiler');
             window.location.href = 'inicio.html';
         } else {
