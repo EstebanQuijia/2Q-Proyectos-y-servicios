@@ -16,7 +16,7 @@ exports.obtenerAlquileresActivos = (req, res) => {
     });
 };
 
-// RECIBIR TODO EL KIT (MASIVO) - SOLUCIÓN DEFINITIVA POR IDs
+// RECIBIR TODO EL KIT (MASIVO)
 exports.finalizarGrupoAlquiler = (req, res) => {
     const { alquileresIds } = req.body;
 
@@ -25,7 +25,6 @@ exports.finalizarGrupoAlquiler = (req, res) => {
     }
 
     db.serialize(() => {
-        // Primero obtenemos los IDs de los equipos para liberarlos antes de cerrar el alquiler
         const placeholders = alquileresIds.map(() => '?').join(',');
         const querySelect = `SELECT equipo_id FROM alquileres WHERE id IN (${placeholders})`;
 
@@ -73,23 +72,63 @@ exports.recibirConDano = (req, res) => {
     });
 };
 
-// REGISTRAR ALQUILER (SALIDA)
+// REGISTRAR ALQUILER (SALIDA) - ACTUALIZADO PARA GENERAR ACTA
 exports.registrarAlquiler = (req, res) => {
     const { clienteId, equiposIds, fechaInicio, fechaFin, observaciones } = req.body;
+
     db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
-        try {
-            const stmtAlq = db.prepare(`INSERT INTO alquileres (cliente_id, equipo_id, fecha_inicio, fecha_fin, estado, observaciones) VALUES (?, ?, ?, ?, 'activo', ?)`);
-            const stmtEqui = db.prepare(`UPDATE equipos SET estado = 'alquilado' WHERE id = ?`);
-            equiposIds.forEach(id => {
-                stmtAlq.run(clienteId, id, fechaInicio, fechaFin, observaciones);
-                stmtEqui.run(id);
+        // 1. Obtener datos del cliente (nombre, cedula, direccion, etc)
+        db.get('SELECT * FROM clientes WHERE id = ?', [clienteId], (err, cliente) => {
+            if (err || !cliente) return res.status(500).json({ mensaje: 'Error al obtener cliente' });
+
+            // 2. Obtener datos de los equipos seleccionados
+            const placeholders = equiposIds.map(() => '?').join(',');
+            const queryEquipos = `
+                SELECT e.numero_serie, te.nombre, te.marca, te.modelo 
+                FROM equipos e 
+                JOIN tipos_equipos te ON e.tipo_equipo_id = te.id 
+                WHERE e.id IN (${placeholders})`;
+
+            db.all(queryEquipos, equiposIds, (err, listaEquipos) => {
+                if (err) return res.status(500).json({ mensaje: 'Error al obtener equipos' });
+
+                db.run('BEGIN TRANSACTION');
+                try {
+                    const stmtAlq = db.prepare(`INSERT INTO alquileres (cliente_id, equipo_id, fecha_inicio, fecha_fin, estado, observaciones) VALUES (?, ?, ?, ?, 'activo', ?)`);
+                    const stmtEqui = db.prepare(`UPDATE equipos SET estado = 'alquilado' WHERE id = ?`);
+                    
+                    equiposIds.forEach(id => {
+                        stmtAlq.run(clienteId, id, fechaInicio, fechaFin, observaciones);
+                        stmtEqui.run(id);
+                    });
+                    
+                    stmtAlq.finalize(); 
+                    stmtEqui.finalize();
+
+                    db.run('COMMIT', (err) => {
+                        if (err) { db.run('ROLLBACK'); return res.status(500).json({ mensaje: 'Error en el commit' }); }
+                        
+                        // 3. Devolvemos TODO al frontend para que la ventana emergente genere el acta
+                        res.json({ 
+                            mensaje: 'Alquiler registrado.',
+                            actaData: {
+                                cliente: {
+                                    nombre: cliente.nombre,
+                                    cedula: cliente.cedula,
+                                    direccion: cliente.direccion || 'Quito',
+                                    telefono: cliente.telefono || 'S/N'
+                                },
+                                equipos: listaEquipos,
+                                fecha: fechaInicio,
+                                hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            }
+                        });
+                    });
+                } catch (e) { 
+                    db.run('ROLLBACK'); 
+                    res.status(500).json({ mensaje: 'Error en el proceso' }); 
+                }
             });
-            stmtAlq.finalize(); stmtEqui.finalize();
-            db.run('COMMIT', (err) => {
-                if (err) { db.run('ROLLBACK'); return res.status(500).json({ mensaje: 'Error' }); }
-                res.json({ mensaje: 'Alquiler registrado.' });
-            });
-        } catch (e) { db.run('ROLLBACK'); res.status(500).send(); }
+        });
     });
 };
