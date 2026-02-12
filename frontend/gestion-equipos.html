@@ -6,10 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Equipos - 2Q Proyectos</title>
 
-    <!-- Bootstrap CSS (Necesario para los estilos de la Navbar) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/styles.css">
 
     <style>
@@ -85,18 +83,15 @@
 
 <body class="dashboard">
 
-    <!-- La Navbar se inyectará AQUÍ (arriba de todo) por js/navbar.js -->
-
     <div class="content">
         <h2 class="text-center">Gestión de Equipos</h2>
 
         <div class="tabs">
-            <!-- Funciones llamadas por JS -->
             <button class="tab active" onclick="cambiarTab('tipo')">Agregar Tipo de Equipo</button>
             <button class="tab" onclick="cambiarTab('unidad')">Agregar Unidad Individual</button>
+            <button class="tab" onclick="cambiarTab('mantenimiento'); cargarEquiposMantenimiento()">Mantenimiento</button>
         </div>
 
-        <!-- TAB 1: Agregar Tipo de Equipo -->
         <div id="tab-tipo" class="tab-content active">
             <div class="form-container">
                 <h3>Nuevo Tipo de Equipo</h3>
@@ -153,7 +148,6 @@
             </div>
         </div>
 
-        <!-- TAB 2: Agregar Unidad Individual -->
         <div id="tab-unidad" class="tab-content">
             <div class="form-container">
                 <h3>Nueva Unidad Individual</h3>
@@ -168,9 +162,6 @@
                     <div class="form-group">
                         <label for="variante">Variante / Especificación (opcional)</label>
                         <input type="text" id="variante" placeholder="Ej: 2m, 2.5m, Rojo, etc.">
-                        <small style="color: #666; font-size: 12px;">
-                            <!-- Útil para equipos con diferentes medidas o características -->
-                        </small>
                     </div>
 
                     <div class="form-group">
@@ -199,16 +190,20 @@
             </div>
         </div>
 
+        <div id="tab-mantenimiento" class="tab-content">
+            <div class="form-container" style="max-width: 800px;">
+                <h3>Equipos en Taller / Reparación</h3>
+                <p class="text-muted">Lista de unidades que regresaron con fallos.</p>
+                <hr>
+                <div id="listaMantenimiento">
+                    </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- SCRIPTS OBLIGATORIOS -->
-    <!-- 1. Carga Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- 2. Carga la Navbar (que inyecta la barra de navegación) -->
     <script src="js/navbar.js"></script>
-
-    <!-- 3. Lógica de Gestión de Equipos -->
     <script src="js/gestion-equipos.js"></script>
 </body>
 

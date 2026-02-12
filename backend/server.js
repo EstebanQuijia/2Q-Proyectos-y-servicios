@@ -5,6 +5,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const inventarioRoutes = require('./src/routes/inventarioRoutes');
 const equiposRoutes = require('./src/routes/equiposRoutes');
 const clientesRoutes = require('./src/routes/clientesRoutes');
+// 1. IMPORTAR LAS NUEVAS RUTAS DE ALQUILER
 const alquilerRoutes = require('./src/routes/alquilerRoutes');
 
 const app = express();
@@ -21,9 +22,8 @@ app.use('/api', authRoutes);
 app.use('/api', equiposRoutes);
 app.use('/api', inventarioRoutes);
 app.use('/api', clientesRoutes);
+// 2. REGISTRAR LAS RUTAS DE ALQUILER
 app.use('/api', alquilerRoutes);
-
-
 
 // Iniciar servidor
 const PORT = 3000;

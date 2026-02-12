@@ -150,3 +150,13 @@ exports.restaurarEquipo = (req, res) => {
     });
   });
 };
+// Cambiar estado de mantenimiento a disponible
+exports.completarMantenimiento = (req, res) => {
+    const { id } = req.params;
+    const sql = "UPDATE equipos SET estado = 'disponible' WHERE id = ?";
+    
+    db.run(sql, [id], function(err) {
+        if (err) return res.status(500).json({ mensaje: "Error al actualizar el equipo" });
+        res.json({ mensaje: "Equipo reparado y disponible para alquiler." });
+    });
+};

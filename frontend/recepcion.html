@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Recepción - 2Q Proyectos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        
+        .container-main {
+            padding: 40px 60px; 
+            max-width: 1400px;
+            margin: auto;
+        }
+        
+        .header-agenda {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+
+        .fecha-header { 
+            background: #ffffff; 
+            padding: 10px 25px; 
+            border-radius: 30px; 
+            font-weight: 700; 
+            color: #555; 
+            border: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+            width: fit-content;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cliente-card { 
+            border: none;
+            border-radius: 16px; 
+            background: white; 
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .card-header-custom {
+            padding: 20px 30px;
+            background-color: #fff;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .equipo-row { 
+            padding: 18px 30px; 
+            border-bottom: 1px solid #f8f9fa;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        /* BOTONES CORTOS */
+        .btn-corto {
+            width: auto !important;
+            min-width: 120px;
+            max-width: 200px;
+            white-space: nowrap;
+        }
+
+        .btn-report-neutral {
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+            background: transparent;
+            font-size: 0.8rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            width: auto;
+        }
+
+        .btn-report-neutral:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-refresh-mini {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="dashboard">
+    <div class="container-main">
+        <div class="header-agenda">
+            <div>
+                <h2 class="fw-bold text-dark m-0">Agenda de Recepción</h2>
+                <p class="text-muted m-0 small">Listado de devoluciones pendientes por fecha.</p>
+            </div>
+            <button class="btn btn-outline-secondary btn-refresh-mini shadow-sm" onclick="cargarAlquileresActivos()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+        
+        <div id="contenedorRecepcion">
+            </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/recepcion.js"></script>
+</body>
+</html>

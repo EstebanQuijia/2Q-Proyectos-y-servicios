@@ -1,6 +1,5 @@
 function verificarSesion() {
     if (!localStorage.getItem('token')) {
-        // Si no hay token, redirigir a la página de inicio (asumiendo login)
         window.location.href = '/';
         return false;
     }
@@ -9,165 +8,172 @@ function verificarSesion() {
 
 // Cambiar entre tabs
 function cambiarTab(tab) {
-    // Ocultar todos los tabs
     document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.querySelectorAll('.tab').forEach(button => {
-        button.classList.remove('active');
-    });
+        content.classList.remove('active');
+    });
+    document.querySelectorAll('.tab').forEach(button => {
+        button.classList.remove('active');
+    });
 
-    // Mostrar tab seleccionado
-    if (tab === 'tipo') {
-        document.getElementById('tab-tipo').classList.add('active');
-        document.querySelectorAll('.tab')[0].classList.add('active');
-    } else {
-        document.getElementById('tab-unidad').classList.add('active');
-        document.querySelectorAll('.tab')[1].classList.add('active');
-        cargarTiposEquipos();
-    }
+    if (tab === 'tipo') {
+        document.getElementById('tab-tipo').classList.add('active');
+        document.querySelectorAll('.tab')[0].classList.add('active');
+    } else if (tab === 'unidad') {
+        document.getElementById('tab-unidad').classList.add('active');
+        document.querySelectorAll('.tab')[1].classList.add('active');
+        cargarTiposEquipos();
+    } else if (tab === 'mantenimiento') {
+        document.getElementById('tab-mantenimiento').classList.add('active');
+        document.querySelectorAll('.tab')[2].classList.add('active');
+        cargarEquiposMantenimiento();
+    }
 }
 
-// Previsualizar imagen
 function previsualizarImagen(event) {
-    const preview = document.getElementById('preview');
-    const file = event.target.files[0];
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-              preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-        };
-        reader.readAsDataURL(file);
-    }
+    const preview = document.getElementById('preview');
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+              preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
-// Formulario: Agregar Tipo de Equipo
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Verificar sesión al cargar el DOM
     if (!verificarSesion()) return;
 
-    document.getElementById('formTipoEquipo').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    const formTipo = document.getElementById('formTipoEquipo');
+    if (formTipo) {
+        formTipo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('nombre', document.getElementById('nombre').value);
+            formData.append('tipo', document.getElementById('tipo').value);
+            formData.append('marca', document.getElementById('marca').value);
+            formData.append('modelo', document.getElementById('modelo').value);
+            formData.append('descripcion', document.getElementById('descripcion').value);
+            
+            const fotoInput = document.getElementById('foto');
+            if (fotoInput.files[0]) formData.append('foto', fotoInput.files[0]);
 
-        const formData = new FormData();
-        formData.append('nombre', document.getElementById('nombre').value);
-        formData.append('tipo', document.getElementById('tipo').value);
-        formData.append('marca', document.getElementById('marca').value);
-        formData.append('modelo', document.getElementById('modelo').value);
-        formData.append('descripcion', document.getElementById('descripcion').value);
-        
-        const fotoInput = document.getElementById('foto');
-        if (fotoInput.files[0]) {
-            formData.append('foto', fotoInput.files[0]);
-        }
+            try {
+                const res = await fetch('/api/tipos-equipos', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    alert('✅ Tipo guardado');
+                    formTipo.reset();
+                    document.getElementById('preview').innerHTML = '<span>Vista previa</span>';
+                }
+            } catch (error) { console.error(error); }
+        });
+    }
 
-        // Se verifica la sesión antes de la llamada a la API
-        const token = localStorage.getItem('token'); 
-        if (!token) {
-            verificarSesion();
-            return;
-        }
+    const formUnidad = document.getElementById('formUnidadEquipo');
+    if (formUnidad) {
+        formUnidad.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const datos = {
+                tipo_equipo_id: document.getElementById('tipoEquipo').value,
+                numero_serie: document.getElementById('numeroSerie').value,
+                variante: document.getElementById('variante').value || null, 
+                estado: document.getElementById('estado').value,
+                observaciones: document.getElementById('observaciones').value
+            };
 
-        try {
-            const res = await fetch('/api/tipos-equipos', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await res.json();
-
-            const mensaje = document.getElementById('mensajeTipo');
-            if (res.ok) {
-                mensaje.className = 'mensaje exito';
-                mensaje.textContent = '✅ Tipo de equipo guardado correctamente';
-                document.getElementById('formTipoEquipo').reset();
-                document.getElementById('preview').innerHTML = '<span>Vista previa</span>';
-            } else {
-                mensaje.className = 'mensaje error';
-                mensaje.textContent = data.mensaje || 'Error al guardar';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('mensajeTipo').className = 'mensaje error';
-            document.getElementById('mensajeTipo').textContent = 'Error de conexión';
-        }
-    });
+            try {
+                const res = await fetch('/api/equipos', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(datos)
+                });
+                if (res.ok) {
+                    alert('✅ Unidad guardada');
+                    formUnidad.reset();
+                }
+            } catch (error) { console.error(error); }
+        });
+    }
 });
 
-// Cargar tipos de equipos para el select
 async function cargarTiposEquipos() {
-    if (!verificarSesion()) return; // Revisar sesión antes de cargar
-
-    try {
-        const res = await fetch('/api/tipos-equipos');
-        const tipos = await res.json();
-
-        const select = document.getElementById('tipoEquipo');
-        select.innerHTML = '<option value="">Selecciona un tipo...</option>';
-
-        tipos.forEach(tipo => {
-            const option = document.createElement('option');
-            option.value = tipo.id;
-            option.textContent = `${tipo.nombre} (${tipo.tipo})`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error al cargar tipos:', error);
-    }
+    try {
+        const res = await fetch('/api/tipos-equipos');
+        const tipos = await res.json();
+        const select = document.getElementById('tipoEquipo');
+        if (!select) return;
+        select.innerHTML = '<option value="">Selecciona un tipo...</option>';
+        tipos.forEach(tipo => {
+            const option = document.createElement('option');
+            option.value = tipo.id;
+            option.textContent = `${tipo.nombre} (${tipo.tipo})`;
+            select.appendChild(option);
+        });
+    } catch (error) { console.error(error); }
 }
 
-// Formulario: Agregar Unidad Individual
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('formUnidadEquipo').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        // Se verifica la sesión antes de la llamada a la API
-        const token = localStorage.getItem('token'); 
-        if (!token) {
-            verificarSesion();
+async function cargarEquiposMantenimiento() {
+    try {
+        const res = await fetch('/api/equipos/todos');
+        const equipos = await res.json();
+        const container = document.getElementById('listaMantenimiento');
+        if (!container) return;
+        container.innerHTML = '';
+        const danados = equipos.filter(e => e.estado === 'mantenimiento');
+        if (danados.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted p-4">No hay equipos en taller.</p>';
             return;
         }
+        danados.forEach(e => {
+            const card = document.createElement('div');
+            card.className = "col-12 mb-2";
+            card.innerHTML = `
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex justify-content-between align-items-center py-2 px-4">
+                        <div class="d-flex align-items-center" style="gap: 40px;">
+                            <div style="min-width: 150px;">
+                                <small class="text-muted d-block" style="font-size: 0.7rem;">Equipo</small>
+                                <strong>${e.tipo_nombre || 'Equipo'}</strong>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block" style="font-size: 0.7rem;">Serie</small>
+                                <span class="badge bg-secondary">${e.numero_serie}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm px-3 fw-bold" style="width: auto;" onclick="repararEquipo(${e.id})">
+                            ✅ REPARADO
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (e) { console.error(e); }
+}
 
-        const datos = {
-            tipo_equipo_id: document.getElementById('tipoEquipo').value,
-            numero_serie: document.getElementById('numeroSerie').value,
-            variante: document.getElementById('variante').value || null, 
-            estado: document.getElementById('estado').value,
-            observaciones: document.getElementById('observaciones').value
-        };
-
-        const mensaje = document.getElementById('mensajeUnidad');
-        mensaje.textContent = 'Guardando...';
-        mensaje.className = 'mensaje';
-
-        try {
-            const res = await fetch('/api/equipos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                mensaje.className = 'mensaje exito';
-                mensaje.textContent = '✅ Unidad guardada correctamente';
-                document.getElementById('formUnidadEquipo').reset();
-                
-                // Ocultar mensaje después de 3 segundos
-                setTimeout(() => {
-                    mensaje.textContent = '';
-                    mensaje.className = '';
-                }, 3000);
-            } else {
-                mensaje.className = 'mensaje error';
-                mensaje.textContent = data.mensaje || 'Error al guardar';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            mensaje.className = 'mensaje error';
-            mensaje.textContent = 'Error de conexión con el servidor';
-        }
-    });
-});
+async function repararEquipo(id) {
+    if (!confirm("¿Confirmas que el equipo está listo para volver al inventario?")) return;
+    try {
+        // URL CORREGIDA: /api/equipos/ID/reparar
+        const res = await fetch(`/api/equipos/${id}/reparar`, {
+            method: 'PATCH',
+            headers: { 
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (res.ok) {
+            alert("✅ Equipo habilitado nuevamente.");
+            cargarEquiposMantenimiento();
+        } else {
+            alert("No se pudo actualizar el estado del equipo.");
+        }
+    } catch (e) { alert("Error de conexión."); }
+}

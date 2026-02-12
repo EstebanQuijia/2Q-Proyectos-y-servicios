@@ -26,6 +26,9 @@ function cargarNavbar() {
             <li class="nav-item">
               <a class="nav-link" href="inventario.html" id="nav-inventario">Inventario</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="recepcion.html" id="nav-recepcion">Recepción</a>
+            </li>
             <li class="nav-item"> 
               <a class="nav-link" href="clientes.html" id="nav-clientes">Clientes</a>
             </li>
@@ -61,6 +64,8 @@ function cargarNavbar() {
     document.getElementById('nav-inicio')?.classList.add('active');
   } else if (pagina.includes('inventario')) {
     document.getElementById('nav-inventario')?.classList.add('active');
+  } else if (pagina.includes('recepcion')) {
+    document.getElementById('nav-recepcion')?.classList.add('active');
   } else if (pagina.includes('clientes')) {
     document.getElementById('nav-clientes')?.classList.add('active');
   } else if (pagina.includes('administracion')) {
