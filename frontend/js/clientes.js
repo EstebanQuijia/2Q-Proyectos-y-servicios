@@ -1,21 +1,23 @@
 const API_URL = '/api/clientes';
 let clienteEditando = null;
 
-// 1. CARGAR Y BUSCAR CLIENTES
+// 1. CARGAR Y BUSCAR CLIENTES (CON ESTILOS HARDCODEADOS)
 async function cargarClientes() {
-    // 1. Verificar sesión
     if (!localStorage.getItem('token')) {
         window.location.href = '/';
         return;
     }
 
-    // OBTENER DATOS DEL USUARIO PARA VALIDAR ROL
     const usuarioData = JSON.parse(localStorage.getItem('usuario'));
     const esAdmin = usuarioData && usuarioData.rol === 'admin';
 
-    const busqueda = document.getElementById('inputBusqueda').value;
+    const busquedaInput = document.getElementById('inputBusqueda');
+    const busqueda = busquedaInput ? busquedaInput.value : '';
     const clientesBody = document.getElementById('clientesBody');
-    clientesBody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+    
+    if (clientesBody) {
+        clientesBody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+    }
 
     try {
         const res = await fetch(`${API_URL}?busqueda=${encodeURIComponent(busqueda)}`);
@@ -31,36 +33,49 @@ async function cargarClientes() {
         clientes.forEach(cliente => {
             const row = document.createElement('tr');
 
-            // Lógica para botones según rol
+            // BOTONES CON MARGEN DE 20PX Y COLORES DEFINIDOS
             let botonesAccion = `
-                <button class="btn btn-sm btn-primary btn-accion" onclick="editarCliente(${cliente.id})">Editar</button>
+                <button class="btn btn-sm fw-bold" 
+                        style="background-color: #0056b3; color: white; border: none; padding: 6px 18px; border-radius: 8px; margin-right: 20px; font-family: 'Segoe UI', sans-serif; transition: 0.3s; cursor: pointer;" 
+                        onclick="editarCliente(${cliente.id})"
+                        onmouseover="this.style.background='#004494'"
+                        onmouseout="this.style.background='#0056b3'">
+                    Editar
+                </button>
             `;
 
-            // SOLO AÑADIR BOTÓN ELIMINAR SI ES ADMIN
             if (esAdmin) {
                 botonesAccion += `
-                    <button class="btn btn-sm btn-secondary btn-accion" onclick="eliminarCliente(${cliente.id}, '${cliente.nombre}')">Eliminar</button>
+                    <button class="btn btn-sm fw-bold" 
+                            style="background-color: white; color: #dc3545; border: 2px solid #dc3545; padding: 5px 18px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; transition: 0.3s; cursor: pointer;" 
+                            onclick="eliminarCliente(${cliente.id}, '${cliente.nombre}')"
+                            onmouseover="this.style.background='#dc3545'; this.style.color='white'"
+                            onmouseout="this.style.background='white'; this.style.color='#dc3545'">
+                        Eliminar
+                    </button>
                 `;
             }
 
             row.innerHTML = `
-                <td>${cliente.nombre}</td>
-                <td>${cliente.cedula}</td>
-                <td>${cliente.telefono || 'N/A'}</td>
-                <td>${cliente.correo || 'N/A'}</td>
-                <td>${botonesAccion}</td>
+                <td style="vertical-align: middle;">${cliente.nombre}</td>
+                <td style="vertical-align: middle;">${cliente.cedula}</td>
+                <td style="vertical-align: middle;">${cliente.telefono || 'N/A'}</td>
+                <td style="vertical-align: middle;">${cliente.correo || 'N/A'}</td>
+                <td style="text-align: center; min-width: 250px; vertical-align: middle;">${botonesAccion}</td>
             `;
             clientesBody.appendChild(row);
         });
 
     } catch (error) {
         console.error('Error al cargar clientes:', error);
-        clientesBody.innerHTML = '<tr><td colspan="5" class="mensaje error">Error al cargar clientes. Verifique el servidor.</td></tr>';
+        if (clientesBody) {
+            clientesBody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Error al cargar clientes.</td></tr>';
+        }
     }
 }
 
 
-// 2. CREAR / ACTUALIZAR CLIENTE
+// 2. CREAR / ACTUALIZAR CLIENTE (CON BLINDAJE DE CÉDULA)
 document.getElementById('formCliente').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -72,12 +87,13 @@ document.getElementById('formCliente').addEventListener('submit', async (e) => {
     const direccion = document.getElementById('direccion').value;
 
     const datos = { nombre, cedula, telefono, correo, direccion };
-
     const token = localStorage.getItem('token');
-    const mensajeDiv = document.getElementById('mensajeCliente');
-    mensajeDiv.style.display = 'block';
-    mensajeDiv.className = 'mensaje';
-    mensajeDiv.textContent = 'Guardando...';
+
+    Swal.fire({
+        title: 'Guardando cliente...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
 
     let url = API_URL;
     let method = 'POST';
@@ -96,22 +112,32 @@ document.getElementById('formCliente').addEventListener('submit', async (e) => {
 
         const data = await res.json();
 
-        if (res.ok) {
-            mensajeDiv.className = 'mensaje exito';
-            mensajeDiv.textContent = data.mensaje;
+        if (res.status === 409) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Identificación Duplicada',
+                text: 'Ya existe un cliente registrado con esta identificación.',
+                confirmButtonColor: '#dc3545',
+                fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+            });
+        } else if (res.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Operación Exitosa!',
+                text: data.mensaje || 'Cliente guardado correctamente.',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
-            // Limpiar formulario y recargar lista
             document.getElementById('formCliente').reset();
             cancelarEdicion();
             cargarClientes();
         } else {
-            mensajeDiv.className = 'mensaje error';
-            mensajeDiv.textContent = data.mensaje || 'Error al guardar el cliente.';
+            Swal.fire('Error', data.mensaje || 'Error al guardar.', 'error');
         }
     } catch (error) {
         console.error('Error en la conexión:', error);
-        mensajeDiv.className = 'mensaje error';
-        mensajeDiv.textContent = 'Error de conexión con el servidor.';
+        Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor.', 'error');
     }
 });
 
@@ -124,11 +150,10 @@ async function editarCliente(id) {
         const cliente = clientes.find(c => c.id === id);
 
         if (!cliente) {
-            alert('Cliente no encontrado para editar.');
+            Swal.fire('Error', 'Cliente no encontrado.', 'error');
             return;
         }
 
-        // 1. Llenar el formulario con datos
         document.getElementById('clienteId').value = cliente.id;
         document.getElementById('nombre').value = cliente.nombre;
         document.getElementById('cedula').value = cliente.cedula;
@@ -136,14 +161,13 @@ async function editarCliente(id) {
         document.getElementById('correo').value = cliente.correo || '';
         document.getElementById('direccion').value = cliente.direccion || '';
 
-        // 2. Cambiar UI a modo edición
         document.getElementById('formTitle').textContent = `Editar Cliente: ${cliente.nombre}`;
         document.getElementById('btnGuardar').textContent = 'Actualizar Cliente';
         document.getElementById('btnCancelar').style.display = 'inline-block';
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Mover arriba
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
-        console.error('Error al cargar cliente para edición:', error);
+        console.error('Error al cargar cliente:', error);
     }
 }
 
@@ -153,51 +177,58 @@ function cancelarEdicion() {
     document.getElementById('btnGuardar').textContent = 'Guardar Cliente';
     document.getElementById('btnCancelar').style.display = 'none';
     document.getElementById('formCliente').reset();
-    document.getElementById('mensajeCliente').style.display = 'none';
 }
 
 async function eliminarCliente(id, nombre) {
-    // DOBLE SEGURIDAD: Verificar rol antes de ejecutar función
     const usuarioData = JSON.parse(localStorage.getItem('usuario'));
     if (usuarioData.rol !== 'admin') {
-        alert("No tienes permisos para realizar esta acción.");
+        Swal.fire('Acceso Denegado', 'No tienes permisos de administrador.', 'error');
         return;
     }
 
-    if (!confirm(`¿Estás seguro de que quieres eliminar al cliente ${nombre}?`)) {
-        return;
-    }
+    Swal.fire({
+        title: `¿Eliminar a ${nombre}?`,
+        text: "Esta acción no se puede deshacer.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+                const data = await res.json();
 
-        const data = await res.json();
-        const mensajeDiv = document.getElementById('mensajeCliente');
-        mensajeDiv.style.display = 'block';
-
-        if (res.ok) {
-            mensajeDiv.className = 'mensaje exito';
-            mensajeDiv.textContent = data.mensaje;
-            cargarClientes(); // Recargar la lista
-        } else {
-            mensajeDiv.className = 'mensaje error';
-            mensajeDiv.textContent = data.mensaje || 'Error al eliminar.';
+                if (res.ok) {
+                    Swal.fire('¡Eliminado!', data.mensaje, 'success');
+                    cargarClientes();
+                } else {
+                    Swal.fire('Error', 'No se pudo eliminar al cliente.', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Error de conexión al eliminar.', 'error');
+            }
         }
+    });
+}
 
-        setTimeout(() => mensajeDiv.style.display = 'none', 3000);
-
-    } catch (error) {
-        console.error('Error de conexión:', error);
-        alert('Error de conexión con el servidor al intentar eliminar.');
-    }
+// NUEVA FUNCIÓN PARA EL BOTÓN LIMPIAR
+function limpiarBusqueda() {
+    document.getElementById('inputBusqueda').value = '';
+    cargarClientes();
 }
 
 // Ejecutar al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btnCancelar').addEventListener('click', cancelarEdicion);
+    const btnCan = document.getElementById('btnCancelar');
+    if (btnCan) btnCan.addEventListener('click', cancelarEdicion);
     cargarClientes();
 });

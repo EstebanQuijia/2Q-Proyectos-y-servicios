@@ -65,11 +65,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: formData
                 });
                 if (res.ok) {
-                    alert('✅ Tipo guardado');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tipo guardado',
+                        text: 'El nuevo modelo de equipo ha sido registrado exitosamente.',
+                        confirmButtonColor: '#0056b3'
+                    });
                     formTipo.reset();
                     document.getElementById('preview').innerHTML = '<span>Vista previa</span>';
                 }
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                Swal.fire('Error', 'No se pudo guardar el tipo de equipo.', 'error');
+            }
         });
     }
 
@@ -95,10 +102,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(datos)
                 });
                 if (res.ok) {
-                    alert('✅ Unidad guardada');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Unidad guardada',
+                        text: 'La serie ha sido agregada al inventario correctamente.',
+                        confirmButtonColor: '#0056b3'
+                    });
                     formUnidad.reset();
                 }
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                Swal.fire('Error', 'No se pudo registrar la unidad.', 'error');
+            }
         });
     }
 });
@@ -113,6 +127,7 @@ async function cargarTiposEquipos() {
         tipos.forEach(tipo => {
             const option = document.createElement('option');
             option.value = tipo.id;
+            option.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             option.textContent = `${tipo.nombre} (${tipo.tipo})`;
             select.appendChild(option);
         });
@@ -134,6 +149,7 @@ async function cargarEquiposMantenimiento() {
         danados.forEach(e => {
             const card = document.createElement('div');
             card.className = "col-12 mb-2";
+            card.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             card.innerHTML = `
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex justify-content-between align-items-center py-2 px-4">
@@ -147,7 +163,7 @@ async function cargarEquiposMantenimiento() {
                                 <span class="badge bg-secondary">${e.numero_serie}</span>
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-sm px-3 fw-bold" style="width: auto;" onclick="repararEquipo(${e.id})">
+                        <button class="btn btn-primary btn-sm px-3 fw-bold" style="width: auto; background-color: #0056b3; font-family: inherit;" onclick="repararEquipo(${e.id})">
                             ✅ REPARADO
                         </button>
                     </div>
@@ -159,21 +175,39 @@ async function cargarEquiposMantenimiento() {
 }
 
 async function repararEquipo(id) {
-    if (!confirm("¿Confirmas que el equipo está listo para volver al inventario?")) return;
-    try {
-        // URL CORREGIDA: /api/equipos/ID/reparar
-        const res = await fetch(`/api/equipos/${id}/reparar`, {
-            method: 'PATCH',
-            headers: { 
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
+    Swal.fire({
+        title: '¿Equipo reparado?',
+        text: "¿Confirmas que el equipo está listo para volver al inventario?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0056b3',
+        cancelButtonColor: '#dc3545',
+        confirmButtonText: 'Sí, habilitar',
+        cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch(`/api/equipos/${id}/reparar`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Listo!',
+                        text: 'Equipo habilitado nuevamente.',
+                        confirmButtonColor: '#0056b3'
+                    });
+                    cargarEquiposMantenimiento();
+                } else {
+                    Swal.fire('Error', 'No se pudo actualizar el estado.', 'error');
+                }
+            } catch (e) { 
+                Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
             }
-        });
-        if (res.ok) {
-            alert("✅ Equipo habilitado nuevamente.");
-            cargarEquiposMantenimiento();
-        } else {
-            alert("No se pudo actualizar el estado del equipo.");
         }
-    } catch (e) { alert("Error de conexión."); }
+    });
 }

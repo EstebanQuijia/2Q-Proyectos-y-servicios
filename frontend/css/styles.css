@@ -1,3 +1,14 @@
+/* VARIABLES DE COLOR - Cambia aquí para actualizar toda la app */
+:root {
+  --color-primario: #0056b3;    /* Azul Industrial Principal */
+  --color-primario-glow: rgba(0, 86, 179, 0.4);
+  --color-secundario: #343a40;  /* Gris Grafito para Navbar */
+  --color-acento: #ff8800;      /* Naranja para detalles (opcional) */
+  --color-fondo: #f5f7fa;
+  --color-blanco: #ffffff;
+  --color-borde: #e0e0e0;
+}
+
 /* Reset y estilos generales */
 * {
   margin: 0;
@@ -11,19 +22,17 @@ body {
   min-height: 100vh;
 }
 
-/* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE LOGIN (Asumiendo que usas <body class="login">) */
-/* Si usas la clase 'container' en el body, esto asegura que el login se centre */
+/* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE LOGIN */
 body.login {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primario); /* Color sólido profesional */
   display: flex; 
   justify-content: center; 
   align-items: center; 
 }
 
-
 /* Contenedor principal para LOGIN */
 .container {
-  background: white;
+  background: var(--color-blanco);
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -31,14 +40,14 @@ body.login {
   width: 90%;
 }
 
-/* Logo, formularios, botones, mensajes (sin cambios) */
+/* Logo, formularios, botones, mensajes */
 .logo {
   text-align: center;
   margin-bottom: 30px;
 }
 
 .logo h1 {
-  color: #333; /* Cambiado a un color oscuro para contraste en fondo blanco */
+  color: #333;
   font-size: 32px;
   margin-bottom: 5px;
 }
@@ -48,7 +57,7 @@ body.login {
   font-size: 14px;
 }
 
-/* Formularios - Estilos CLAVE para la vista "moderna" */
+/* Formularios */
 .form-group {
   margin-bottom: 20px;
 }
@@ -60,17 +69,15 @@ body.login {
   font-weight: 500;
 }
 
-/* CORRECCIÓN: Usar selectores más específicos para forzar 100% de ancho */
 .form-group input, 
 .form-group select, 
 .form-group textarea {
-  width: 100%; /* ¡CLAVE para que llenen el contenedor! */
+  width: 100%; 
   padding: 12px 15px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-borde);
   border-radius: 8px;
-  font-size: 16px; /* Aumentado a 16px para mejor visualización móvil */
+  font-size: 16px;
   transition: all 0.3s ease;
-  /* Asegura que el width del 100% incluya el padding */
   box-sizing: border-box; 
 }
 
@@ -78,15 +85,15 @@ body.login {
 .form-group select:focus, 
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px var(--color-primario-glow);
 }
 
-/* Botones (sin cambios, ya se ven bien) */
+/* Botones - Ahora con el color sólido industrial */
 .btn {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primario);
   color: white;
   border: none;
   border-radius: 8px;
@@ -98,7 +105,7 @@ body.login {
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 5px 20px var(--color-primario-glow);
 }
 
 .btn:active {
@@ -114,7 +121,7 @@ body.login {
   box-shadow: 0 5px 20px rgba(220, 53, 69, 0.4);
 }
 
-/* Mensajes (sin cambios) */
+/* Mensajes */
 .mensaje {
   padding: 12px;
   border-radius: 8px;
@@ -137,16 +144,16 @@ body.login {
 
 /* Dashboard */
 .dashboard {
-  background: #f5f7fa;
+  background: var(--color-fondo);
   width: 100%; 
   min-height: 100vh;
   padding: 0;
   margin: 0;
 }
 
-/* Navbar (sin cambios) */
+/* Navbar - Cambiado a Gris Antracita para contraste profesional */
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-secundario);
   padding: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   position: sticky;
@@ -155,8 +162,6 @@ body.login {
   width: 100%; 
 }
 
-/* ... (El resto de estilos de navbar y content permanecen) ... */
-
 .content {
   max-width: 1200px;
   margin: 40px auto;
@@ -164,7 +169,7 @@ body.login {
 }
 
 .welcome-card {
-  background: white;
+  background: var(--color-blanco);
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -193,9 +198,18 @@ body.login {
 }
 
 .navbar .navbar-nav .nav-item .nav-link.active {
-    /* Forzar que el texto y el padding sean los mismos que los inactivos */
     color: white !important; 
-    /* Agregar un pequeño subrayado o fondo sutil para indicar activo */
-    border-bottom: 3px solid white; 
-    padding-bottom: 12px; /* Ajuste para compensar el borde */
+    border-bottom: 3px solid var(--color-primario); /* Subrayado en azul resaltado */
+    padding-bottom: 12px;
+}
+
+/* Estilo final para la Navbar centralizada */
+.navbar-custom {
+    background-color: var(--color-secundario) !important;
+}
+
+/* Color al pasar el mouse por los enlaces de la navbar */
+.navbar-nav .nav-link:hover {
+    color: var(--color-primario) !important;
+    transition: color 0.3s ease;
 }

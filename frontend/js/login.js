@@ -1,49 +1,70 @@
 // ==========================================================
 // Archivo: js/login.js
-// Propósito: Maneja la autenticación y la visualización de mensajes de estado.
+// Propósito: Maneja la autenticación con alertas modernas de SweetAlert2.
 // ==========================================================
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  e.preventDefault();
 
-  const correo = document.getElementById('correo').value;
-  const contraseña = document.getElementById('contraseña').value;
-  const mensajeError = document.getElementById('mensajeError');
+  const correo = document.getElementById('correo').value;
+  const contraseña = document.getElementById('contraseña').value;
 
-  // 1. Limpiar mensaje anterior y hacerlo visible si estaba oculto
-  mensajeError.innerHTML = '';
-  mensajeError.className = '';
-    mensajeError.style.display = 'block'; 
+  // Mostramos una alerta de "Cargando" sutil
+  Swal.fire({
+    title: 'Autenticando...',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contraseña })
-    });
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo, contraseña })
+    });
 
-    const data = await res.json();
+    const data = await res.json();
 
-    if (data.token) {
-      // Guardar token y datos del usuario
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      
-      // Mostrar mensaje de éxito
-      mensajeError.className = 'mensaje exito';
-      mensajeError.textContent = '¡Login exitoso! Redirigiendo...';
-      
-      // Redireccionar después de 1 segundo
-      setTimeout(() => {
-        window.location.href = 'inicio.html';
-      }, 1000);
-    } else {
-      // Mostrar error
-      mensajeError.className = 'mensaje error';
-      mensajeError.textContent = data.mensaje || 'Error al iniciar sesión';
-    }
-  } catch (error) {
-    mensajeError.className = 'mensaje error';
-    mensajeError.textContent = 'Error de conexión con el servidor. Verifica que el backend esté corriendo.';
-  }
+    if (res.ok && data.token) {
+      // Guardar token y datos del usuario
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      
+      // Alerta de éxito unificada con tu marca
+      Swal.fire({
+        icon: 'success',
+        title: '¡Acceso Concedido!',
+        text: 'Bienvenido al sistema de 2Q Proyectos y Servicios.',
+        showConfirmButton: false,
+        timer: 1500,
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+      });
+      
+      // Redireccionar
+      setTimeout(() => {
+        window.location.href = 'inicio.html';
+      }, 1500);
+
+    } else {
+      // Error de credenciales (Usuario o contraseña incorrectos)
+      Swal.fire({
+        icon: 'error',
+        title: 'Fallo en el Ingreso',
+        text: data.mensaje || 'Credenciales incorrectas. Por favor, verifica tus datos.',
+        confirmButtonColor: '#0056b3', // Tu azul industrial
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+      });
+    }
+  } catch (error) {
+    // Error crítico de servidor o conexión
+    Swal.fire({
+      icon: 'warning',
+      title: 'Error de Conexión',
+      text: 'No se pudo contactar con el servidor. Verifica que el backend esté activo.',
+      confirmButtonColor: '#dc3545', // Rojo técnico
+      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    });
+  }
 });

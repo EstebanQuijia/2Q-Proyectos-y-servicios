@@ -58,51 +58,65 @@ function actualizarFiltroTipos(tipos) {
   tipos.forEach(tipo => {
     const option = document.createElement('option');
     option.value = tipo.id;
+    option.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
     option.textContent = tipo.nombre;
     select.appendChild(option);
   });
 }
 
-// CORRECCIÓN 1: Mensaje de advertencia actualizado
+// ACTUALIZADO: Mensaje de borrado lógico con SweetAlert2
 async function eliminarTipo(id, nombre) {
-  if (!confirm(`¿Desactivar el tipo "${nombre}"?\n\nEsto ocultará el tipo del inventario y TAMBIÉN desactivará todas las unidades asociadas.`)) {
-    return;
-  }
+  Swal.fire({
+    title: `¿Desactivar "${nombre}"?`,
+    text: "Esto ocultará el tipo del inventario y desactivará TODAS las unidades asociadas.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sí, desactivar',
+    cancelButtonText: 'Cancelar',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(`/api/tipos-equipos/${id}`, { method: 'DELETE' });
+        const data = await res.json();
 
-  try {
-    const res = await fetch(`/api/tipos-equipos/${id}`, {
-      method: 'DELETE'
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert(data.mensaje);
-      cargarTipos();
-      cargarUnidades(); // CORRECCIÓN 2: Refrescar unidades también
-    } else {
-      alert(data.mensaje || 'Error al desactivar');
+        if (res.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Desactivado',
+            text: data.mensaje,
+            confirmButtonColor: '#0056b3'
+          });
+          cargarTipos();
+          cargarUnidades();
+        } else {
+          Swal.fire('Error', data.mensaje || 'Error al desactivar', 'error');
+        }
+      } catch (error) {
+        Swal.fire('Error', 'Error de conexión', 'error');
+      }
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error de conexión');
-  }
+  });
 }
 
 async function restaurarTipo(id) {
   try {
-    const res = await fetch(`/api/tipos-equipos/${id}/restaurar`, {
-      method: 'PATCH'
-    });
-
+    const res = await fetch(`/api/tipos-equipos/${id}/restaurar`, { method: 'PATCH' });
     const data = await res.json();
 
     if (res.ok) {
-      alert(data.mensaje);
+      Swal.fire({
+        icon: 'success',
+        title: 'Restaurado',
+        text: data.mensaje,
+        confirmButtonColor: '#0056b3'
+      });
       cargarTipos();
-      cargarUnidades(); // Refrescar unidades para verlas activas
+      cargarUnidades();
     } else {
-      alert(data.mensaje || 'Error al restaurar');
+      Swal.fire('Error', data.mensaje || 'Error al restaurar', 'error');
     }
   } catch (error) {
     console.error('Error:', error);
@@ -117,9 +131,7 @@ async function cargarUnidades() {
   
   try {
     let url = '/api/equipos/todos';
-    if (tipoId) {
-      url += `?tipo=${tipoId}`;
-    }
+    if (tipoId) url += `?tipo=${tipoId}`;
 
     const res = await fetch(url);
     const unidades = await res.json();
@@ -164,46 +176,58 @@ async function cargarUnidades() {
   }
 }
 
+// ACTUALIZADO: Eliminar unidad individual
 async function eliminarUnidad(id, numeroSerie) {
-  if (!confirm(`¿Desactivar la unidad "${numeroSerie}"?\n\nEsta unidad ya no aparecerá en el inventario.`)) {
-    return;
-  }
+  Swal.fire({
+    title: '¿Desactivar unidad?',
+    text: `La unidad "${numeroSerie}" ya no aparecerá en el inventario.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(`/api/equipos/${id}`, { method: 'DELETE' });
+        const data = await res.json();
 
-  try {
-    const res = await fetch(`/api/equipos/${id}`, {
-      method: 'DELETE'
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert(data.mensaje);
-      cargarUnidades();
-    } else {
-      alert(data.mensaje || 'Error al desactivar');
+        if (res.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Eliminado',
+            text: data.mensaje,
+            confirmButtonColor: '#0056b3'
+          });
+          cargarUnidades();
+        } else {
+          Swal.fire('Error', data.mensaje || 'Error al desactivar', 'error');
+        }
+      } catch (error) {
+        Swal.fire('Error', 'Error de conexión', 'error');
+      }
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error de conexión');
-  }
+  });
 }
 
-// CORRECCIÓN 3: Refrescar ambas tablas al restaurar unidad
 async function restaurarUnidad(id) {
   try {
-    const res = await fetch(`/api/equipos/${id}/restaurar`, {
-      method: 'PATCH'
-    });
-
+    const res = await fetch(`/api/equipos/${id}/restaurar`, { method: 'PATCH' });
     const data = await res.json();
 
     if (res.ok) {
-      alert(data.mensaje);
-      // Al restaurar un hijo, el servidor activa al padre. Refrescamos ambas.
+      Swal.fire({
+        icon: 'success',
+        title: 'Habilitada',
+        text: data.mensaje,
+        confirmButtonColor: '#0056b3'
+      });
       cargarTipos();
       cargarUnidades();
     } else {
-      alert(data.mensaje || 'Error al restaurar');
+      Swal.fire('Error', data.mensaje || 'Error al restaurar', 'error');
     }
   } catch (error) {
     console.error('Error:', error);

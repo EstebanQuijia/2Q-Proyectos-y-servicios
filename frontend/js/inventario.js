@@ -14,7 +14,7 @@ function cerrarSesion() {
   window.location.href = '/';
 }
 
-// 2. RENDERIZAR BARRA DE PROGRESO SUPERIOR (LÓGICA FLEXIBLE)
+// 2. RENDERIZAR BARRA DE PROGRESO SUPERIOR
 function renderizarBarraProgreso() {
   configAlquiler = JSON.parse(localStorage.getItem('configAlquiler'));
   if (!configAlquiler) return;
@@ -24,10 +24,12 @@ function renderizarBarraProgreso() {
 
   const barra = document.createElement('div');
   barra.id = 'barra-progreso-alquiler';
-  barra.className = 'sticky-top bg-dark text-white p-2 shadow-sm';
+  barra.className = 'sticky-top text-white p-2 shadow-sm';
   barra.style.top = '0';
   barra.style.zIndex = '1050';
   barra.style.fontSize = '0.85rem';
+  barra.style.background = '#1a252f'; 
+  barra.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 
   const { minimos, seleccionados } = configAlquiler;
   const rec = seleccionados.receptores || [];
@@ -35,12 +37,9 @@ function renderizarBarraProgreso() {
   const bas = seleccionados.bastones || [];
   const ext = seleccionados.extras || [];
 
-  // Verificamos cumplimiento de mínimos
   const listoReceptores = rec.length >= minimos.receptores;
   const listoColectores = col.length >= minimos.colectores;
   const listoBastones = bas.length >= minimos.bastones;
-  
-  // Variable para el popup de advertencia
   const todoCompleto = listoReceptores && listoColectores && listoBastones;
 
   barra.innerHTML = `
@@ -52,11 +51,21 @@ function renderizarBarraProgreso() {
         <span class="me-3">Bastones: <strong class="${listoBastones ? 'text-success' : 'text-danger'}">${bas.length}/${minimos.bastones}</strong></span>
         ${ext.length > 0 ? `<span class="badge bg-info text-dark ms-2"> +${ext.length} EXTRA(S)</span>` : ''}
       </div>
-      <div>
-        <button class="btn btn-outline-light btn-sm me-2" style="font-size: 0.75rem" onclick="cancelarSeleccion()">CANCELAR</button>
-        <button class="btn btn-success fw-bold btn-sm" 
-                style="font-size: 0.75rem"
-                onclick="confirmarYPasar(${todoCompleto})">
+      
+      <div class="d-flex" style="gap: 15px;">
+        <button class="btn btn-sm fw-bold" 
+                style="background: white; color: #dc3545; border: 2px solid #dc3545; padding: 5px 15px; font-size: 0.75rem; font-family: inherit; transition: 0.3s;" 
+                onclick="cancelarSeleccion()"
+                onmouseover="this.style.background='#dc3545'; this.style.color='white'"
+                onmouseout="this.style.background='white'; this.style.color='#dc3545'">
+          CANCELAR
+        </button>
+
+        <button class="btn btn-sm fw-bold text-white" 
+                style="background: #0056b3; border: none; padding: 5px 20px; font-size: 0.75rem; font-family: inherit; transition: 0.3s;"
+                onclick="confirmarYPasar(${todoCompleto})"
+                onmouseover="this.style.background='#198754'; this.style.transform='scale(1.05)'"
+                onmouseout="this.style.background='#0056b3'; this.style.transform='scale(1)'">
           FINALIZAR SELECCIÓN
         </button>
       </div>
@@ -65,30 +74,34 @@ function renderizarBarraProgreso() {
   document.body.prepend(barra);
 }
 
-/**
- * LÓGICA DE VALIDACIÓN ANTES DE PASAR AL RESUMEN
- * Si el kit está incompleto, lanza el mensaje de advertencia.
- */
+// VALIDACIÓN DE KIT INCOMPLETO CON SWEETALERT2
 function confirmarYPasar(estaCompleto) {
     if (estaCompleto) {
         irAResumen();
     } else {
-        // Mensaje de advertencia consistente con el estilo de administracion.js
-        const mensaje = "⚠️ EL KIT DE ALQUILER ESTÁ INCOMPLETO.\n\n¿Estás seguro de que deseas continuar hacia el resumen de todas formas?";
-        if (confirm(mensaje)) {
-            irAResumen();
-        }
+        Swal.fire({
+            title: '¿Kit Incompleto?',
+            text: "Aún te faltan equipos para cumplir con el plan. ¿Deseas continuar hacia el resumen de todas formas?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0056b3',
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'No, seguir eligiendo'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                irAResumen();
+            }
+        });
     }
 }
 
-// 3. CARGAR INVENTARIO CON DESCUENTO Y COLORES
+// CARGAR INVENTARIO CON DESCUENTO Y COLORES
 async function cargarInventario() {
   try {
     renderizarBarraProgreso();
-
     const res = await fetch('/api/inventario');
     const data = await res.json();
-
     const grid = document.getElementById('inventarioGrid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -100,7 +113,7 @@ async function cargarInventario() {
             ...(s.receptores || []),
             ...(s.colectores || []),
             ...(s.bastones || []),
-            ...(s.tripodes || []), // Incluir trípodes en el descuento visual
+            ...(s.tripodes || []), 
             ...(s.otros || []),
             ...(s.extras || []).map(e => e.id)
         ];
@@ -114,8 +127,6 @@ async function cargarInventario() {
       }
       
       const disponiblesVisual = (tipo.disponibles || 0) - unidadesEnUso;
-
-      // --- ASIGNACIÓN DE COLORES DINÁMICOS ---
       let colorFondo = "#d4edda"; 
       let colorTexto = "#155724";
 
@@ -129,22 +140,20 @@ async function cargarInventario() {
 
       const card = document.createElement('div');
       card.className = 'equipo-card';
-
+      card.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
       card.innerHTML = `
         <div class="equipo-foto">
           ${tipo.foto ? `<img src="media/equipos/${tipo.foto}" alt="${tipo.nombre}">` : '<span>Sin foto</span>'}
         </div>
         <div class="equipo-info">
-          <h3>${tipo.nombre}</h3>
+          <h3 style="font-size: 1.2rem; font-weight: 700;">${tipo.nombre}</h3>
           <p><strong>Tipo:</strong> ${tipo.tipo}</p>
           <p class="text-muted small mb-2">${tipo.descripcion || 'Sin descripción'}</p>
-          
           <span class="stock" style="background-color: ${colorFondo} !important; color: ${colorTexto} !important; padding: 4px 12px; border-radius: 15px; font-weight: bold; display: inline-block; font-size: 0.85rem;">
             ${disponiblesVisual} de ${tipo.total || 0} disponibles
           </span>
-          
           <br>
-          <button class="btn btn-primary btn-small w-100 mt-3" onclick="verUnidades(${tipo.id})">Ver Unidades</button>
+          <button class="btn btn-primary btn-small w-100 mt-3" style="font-family: inherit; background-color: #0056b3; border: none;" onclick="verUnidades(${tipo.id})">Ver Unidades</button>
         </div>
       `;
       grid.appendChild(card);
@@ -158,11 +167,23 @@ function verUnidades(tipoId) {
   window.location.href = `detalle-equipos.html?id=${tipoId}`;
 }
 
+// CANCELAR CON SWEETALERT2
 function cancelarSeleccion() {
-  if (confirm('¿Deseas cancelar la selección y volver a los planes?')) {
-    localStorage.removeItem('configAlquiler');
-    window.location.href = 'combos.html';
-  }
+    Swal.fire({
+        title: '¿Cancelar Selección?',
+        text: "Se perderán los equipos elegidos y volverás a la página de planes.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Mantener selección'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem('configAlquiler');
+            window.location.href = 'combos.html';
+        }
+    });
 }
 
 function irAResumen() {

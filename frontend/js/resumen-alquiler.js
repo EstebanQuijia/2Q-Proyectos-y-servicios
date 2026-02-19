@@ -5,8 +5,14 @@ const config = JSON.parse(localStorage.getItem('configAlquiler'));
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!config) {
-        alert("No hay una configuración de alquiler activa.");
-        window.location.href = 'combos.html';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin configuración',
+            text: 'No hay una configuración de alquiler activa.',
+            confirmButtonColor: '#0056b3'
+        }).then(() => {
+            window.location.href = 'combos.html';
+        });
         return;
     }
     if(document.getElementById('fechaInicio')) {
@@ -26,6 +32,8 @@ async function renderizarEquipos() {
     if (!container) return;
     container.innerHTML = '';
     const s = config.seleccionados;
+    
+    // Mapeo de categorías con la fuente unificada
     const categoriasMapeo = {
         receptores: "RECEPTOR GNSS MARCA 2Q DE DOBLE FRECUENCIA",
         colectores: "COLECTOR CON SURPAD 4.2 (Incluye 1 power bank y 1 cable usb tipo C)",
@@ -38,6 +46,7 @@ async function renderizarEquipos() {
             s[cat].forEach(equipo => {
                 const item = document.createElement('div');
                 item.className = 'item-alquiler d-flex justify-content-between align-items-center mb-2 p-2 bg-light border-start border-primary';
+                item.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
                 item.innerHTML = `<span><strong>1</strong> ${categoriasMapeo[cat]}</span><span class="badge bg-dark">Serie: ${equipo.numeroSerie}</span>`;
                 container.appendChild(item);
             });
@@ -48,6 +57,7 @@ async function renderizarEquipos() {
         s.extras.forEach(extra => {
             const item = document.createElement('div');
             item.className = 'item-alquiler d-flex justify-content-between align-items-center mb-2 p-2 bg-light border-start border-info';
+            item.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             item.innerHTML = `<span><span class="badge bg-info text-dark me-2">EXTRA</span><strong>1</strong> ${extra.tipoNombre.toUpperCase()}</span><span class="badge bg-dark">Serie: ${extra.numeroSerie}</span>`;
             container.appendChild(item);
         });
@@ -66,6 +76,7 @@ async function buscarClientes() {
         clientes.forEach(c => {
             const option = document.createElement('option');
             option.value = c.id;
+            option.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             option.textContent = `${c.nombre} (${c.cedula})`;
             option.addEventListener('click', () => seleccionarCliente(c));
             select.appendChild(option);
@@ -84,6 +95,7 @@ function seleccionarCliente(c) {
     config.clienteTelefono = c.telefono || "09XXXXXXXX";
 }
 
+// --- PUNTO 2: REGISTRO CON BLINDAJE DE CÉDULA REPETIDA ---
 async function registrarClienteRapido(e) {
     e.preventDefault();
     const datos = {
@@ -93,27 +105,58 @@ async function registrarClienteRapido(e) {
         correo: document.getElementById('m-correo').value,
         direccion: "Registrado desde flujo de alquiler"
     };
+
     try {
         const res = await fetch('/api/clientes', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
             body: JSON.stringify(datos)
         });
+
         const data = await res.json();
-        if (res.ok) {
-            alert("✅ Cliente registrado.");
+
+        if (res.status === 409) {
+            // Error de cédula repetida
+            Swal.fire({
+                icon: 'error',
+                title: 'Cédula Repetida',
+                text: 'Ya existe un cliente registrado con esta identificación.',
+                confirmButtonColor: '#dc3545'
+            });
+        } else if (res.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Registrado!',
+                text: 'Cliente guardado correctamente.',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
             const modalEl = document.getElementById('modalNuevoCliente');
             bootstrap.Modal.getInstance(modalEl).hide();
             await buscarClientes();
             seleccionarCliente({ id: data.id, nombre: datos.nombre, cedula: datos.cedula });
+            document.getElementById('formClienteRapido').reset();
+        } else {
+            throw new Error(data.mensaje || "Error al registrar");
         }
-    } catch (error) { console.error(error); }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message,
+            confirmButtonColor: '#dc3545'
+        });
+    }
 }
 
 async function procesarAlquiler() {
-    if (!config.clienteId) return alert("Selecciona un cliente.");
+    if (!config.clienteId) return Swal.fire('Error', 'Selecciona un cliente.', 'error');
     const fechaFin = document.getElementById('fechaFin').value;
-    if (!fechaFin) return alert("Selecciona fecha fin.");
+    if (!fechaFin) return Swal.fire('Error', 'Selecciona fecha fin.', 'error');
 
     const s = config.seleccionados;
     const equiposIds = [
@@ -142,19 +185,24 @@ async function procesarAlquiler() {
         const data = await res.json();
 
         if (res.ok) {
-            alert("✅ Alquiler registrado exitosamente.");
+            Swal.fire({
+                icon: 'success',
+                title: 'Alquiler Procesado',
+                text: 'Generando acta de impresión...',
+                showConfirmButton: false,
+                timer: 2000
+            });
             generarActaImpresion(data.actaData);
             localStorage.removeItem('configAlquiler');
             setTimeout(() => { window.location.href = 'inicio.html'; }, 3000);
         } else {
-            alert("Error: " + data.mensaje);
+            Swal.fire('Error', data.mensaje, 'error');
         }
     } catch (error) { console.error(error); }
 }
 
 function generarActaImpresion(data) {
     const ventana = window.open('', '_blank');
-    
     const nombreLimpio = data.cliente.nombre.toUpperCase().replace(/ /g, "_");
     ventana.document.title = `ACTA_${nombreLimpio}_${data.fecha.replace(/\//g, "-")}`;
 
@@ -184,38 +232,17 @@ function generarActaImpresion(data) {
                 body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; overflow: hidden; }
                 .pagina { width: 210mm; height: 297mm; background: white; box-sizing: border-box; }
                 .salto { page-break-after: always; }
-                
-                .seccion-corte { 
-                    height: 148.5mm; 
-                    padding: 10mm 20mm 5mm 20mm; 
-                    box-sizing: border-box; 
-                    border-bottom: 1px dashed black; 
-                    display: flex; 
-                    flex-direction: column; 
-                }
-
+                .seccion-corte { height: 148.5mm; padding: 10mm 20mm 5mm 20mm; box-sizing: border-box; border-bottom: 1px dashed black; display: flex; flex-direction: column; }
                 .header { display: flex; align-items: center; border-bottom: 1px solid black; padding-bottom: 5px; }
                 .info-empresa { flex-grow: 1; text-align: center; font-size: 7.5pt; line-height: 1.2; }
                 .titulo-seccion { text-align: center; font-weight: bold; font-size: 10pt; text-decoration: underline; margin: 5px 0; }
-                
-                /* Altura mínima para la tabla para empujar las firmas hacia abajo */
                 .contenedor-tabla { min-height: 50mm; }
                 table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                
-                .frase-seguridad { 
-                    margin-top: 40px; /* Aquí generamos el espacio que faltaba */
-                    font-size: 9pt; 
-                    line-height: 1.4;
-                }
-
-                .flex-grow { flex-grow: 1; }
-                
+                .frase-seguridad { margin-top: 40px; font-size: 9pt; line-height: 1.4; }
                 .firmas { display: flex; justify-content: space-between; margin-top: auto; padding-bottom: 10px; text-align: center; font-size: 8.5pt; }
                 .linea-firma { border-top: 1px solid black; width: 220px; margin: 0 auto 5px auto; }
-                
                 .gray-bar { background: #e0e0e0; text-align: center; font-weight: bold; padding: 3px; border: 1px solid #000; margin: 8px 0; font-size: 9pt; }
                 .tabla-costos td { border: 1px solid #000; padding: 2px 8px; font-size: 8pt; }
-                
                 .datos-deudor-table { border: 2px solid black; width: 100%; border-collapse: collapse; margin-top: 10px; }
                 .datos-deudor-table td { border: 1px solid black; padding: 10px; vertical-align: top; font-size: 9pt; }
             </style>
@@ -234,26 +261,22 @@ function generarActaImpresion(data) {
                     </div>
                     <div class="titulo-seccion">RECEPCIÓN DE EQUIPOS</div>
                     <p style="font-size: 9pt; margin: 5px 0;">Yo <strong>${data.cliente.nombre.toUpperCase()}</strong> con CI N° <strong>${data.cliente.cedula}</strong> recibí de FELIPE OLMEDO QUIJIA MOLINA con CI N° 1721938114 los siguientes equipos en alquiler:</p>
-                    
                     <div class="contenedor-tabla">
                         <table>
                             <thead><tr><th style="border:1px solid black; font-size:8pt; width:15%;">Cant.</th><th style="border:1px solid black; font-size:8pt;">Descripción / Serie</th></tr></thead>
                             <tbody>${filas}</tbody>
                         </table>
                     </div>
-
                     <div class="frase-seguridad">
                         Los equipos antes detallados están en pleno funcionamiento y han sido probados.<br>
                         <strong>Fecha:</strong> ${data.fecha} &nbsp;&nbsp;&nbsp;&nbsp; <strong>Hora:</strong> ${data.hora}
                     </div>
-
                     <div class="firmas">
                         <div><div class="linea-firma"></div><strong>${data.cliente.nombre.toUpperCase()}</strong><br>CI: ${data.cliente.cedula}</div>
                         <div><div class="linea-firma"></div><strong>FELIPE OLMEDO QUIJIA MOLINA</strong><br>CI: 1721938114</div>
                     </div>
                 </div>`).join('')}
             </div>
-
             <div class="pagina">
                 <div class="seccion-corte">
                     <div class="gray-bar">Costo de accesorios en caso de pérdida:</div>
