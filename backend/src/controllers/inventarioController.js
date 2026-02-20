@@ -13,7 +13,6 @@ exports.obtenerInventario = (req, res) => {
       te.foto,
       COUNT(e.id) as total,
       SUM(CASE WHEN e.estado = 'disponible' AND (e.activo = 1 OR e.activo IS NULL) THEN 1 ELSE 0 END) as disponibles,
-      -- ESTA ES LA LÍNEA CLAVE QUE AGREGAMOS:
       GROUP_CONCAT(e.id) as unidades_ids
     FROM tipos_equipos te
     LEFT JOIN equipos e ON te.id = e.tipo_equipo_id
@@ -27,8 +26,37 @@ exports.obtenerInventario = (req, res) => {
       console.error('Error al obtener inventario:', err);
       return res.status(500).json({ mensaje: 'Error al obtener inventario' });
     }
-
-    // Enviamos las filas con la nueva columna 'unidades_ids'
     res.json(rows);
   });
+};
+
+/**
+ * NUEVA FUNCIÓN: Obtener unidades individuales por Tipo de Equipo
+ * Permite que las tarjetas del inventario muestren las series (S/N) 
+ * sin necesidad de navegar a otra página.
+ */
+exports.obtenerUnidadesPorTipo = (req, res) => {
+    const { tipoId } = req.params;
+
+    // Consultamos la tabla 'equipos' (donde están las series) usando el ID del tipo
+    const query = `
+        SELECT 
+            id, 
+            numero_serie, 
+            estado, 
+            observaciones 
+        FROM equipos 
+        WHERE tipo_equipo_id = ? AND (activo = 1 OR activo IS NULL)
+        ORDER BY estado ASC, numero_serie ASC
+    `;
+
+    db.all(query, [tipoId], (err, rows) => {
+        if (err) {
+            console.error('Error al obtener unidades para inventario:', err);
+            return res.status(500).json({ error: 'Error al obtener las unidades de la base de datos' });
+        }
+        
+        // Enviamos la lista de series al frontend
+        res.json(rows);
+    });
 };

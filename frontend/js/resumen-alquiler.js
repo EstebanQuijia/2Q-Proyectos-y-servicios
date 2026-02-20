@@ -47,7 +47,8 @@ async function renderizarEquipos() {
                 const item = document.createElement('div');
                 item.className = 'item-alquiler d-flex justify-content-between align-items-center mb-2 p-2 bg-light border-start border-primary';
                 item.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-                item.innerHTML = `<span><strong>1</strong> ${categoriasMapeo[cat]}</span><span class="badge bg-dark">Serie: ${equipo.numeroSerie}</span>`;
+                // CORRECCIÓN: Leemos equipo.serie del objeto guardado en inventario.js
+                item.innerHTML = `<span><strong>1</strong> ${categoriasMapeo[cat]}</span><span class="badge bg-dark">Serie: ${equipo.serie || 'S/N'}</span>`;
                 container.appendChild(item);
             });
         }
@@ -58,7 +59,8 @@ async function renderizarEquipos() {
             const item = document.createElement('div');
             item.className = 'item-alquiler d-flex justify-content-between align-items-center mb-2 p-2 bg-light border-start border-info';
             item.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-            item.innerHTML = `<span><span class="badge bg-info text-dark me-2">EXTRA</span><strong>1</strong> ${extra.tipoNombre.toUpperCase()}</span><span class="badge bg-dark">Serie: ${extra.numeroSerie}</span>`;
+            // CORRECCIÓN: Los extras ahora también usan la propiedad serie y nombre
+            item.innerHTML = `<span><span class="badge bg-info text-dark me-2">EXTRA</span><strong>1</strong> ${extra.nombre.toUpperCase()}</span><span class="badge bg-dark">Serie: ${extra.serie || 'S/N'}</span>`;
             container.appendChild(item);
         });
     }
@@ -95,7 +97,6 @@ function seleccionarCliente(c) {
     config.clienteTelefono = c.telefono || "09XXXXXXXX";
 }
 
-// --- PUNTO 2: REGISTRO CON BLINDAJE DE CÉDULA REPETIDA ---
 async function registrarClienteRapido(e) {
     e.preventDefault();
     const datos = {
@@ -119,7 +120,6 @@ async function registrarClienteRapido(e) {
         const data = await res.json();
 
         if (res.status === 409) {
-            // Error de cédula repetida
             Swal.fire({
                 icon: 'error',
                 title: 'Cédula Repetida',
@@ -144,12 +144,7 @@ async function registrarClienteRapido(e) {
             throw new Error(data.mensaje || "Error al registrar");
         }
     } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message,
-            confirmButtonColor: '#dc3545'
-        });
+        Swal.fire({ icon: 'error', title: 'Error', text: error.message, confirmButtonColor: '#dc3545' });
     }
 }
 
@@ -159,13 +154,17 @@ async function procesarAlquiler() {
     if (!fechaFin) return Swal.fire('Error', 'Selecciona fecha fin.', 'error');
 
     const s = config.seleccionados;
+
+    // CORRECCIÓN CRÍTICA: Extraemos solo los IDs numéricos de los objetos {id, serie}
     const equiposIds = [
         ...(s.receptores || []).map(e => e.id),
         ...(s.colectores || []).map(e => e.id),
         ...(s.bastones || []).map(e => e.id),
         ...(s.tripodes || []).map(e => e.id),
         ...(s.extras || []).map(e => e.id)
-    ];
+    ].filter(id => id != null);
+
+    if (equiposIds.length === 0) return Swal.fire('Error', 'No hay equipos seleccionados.', 'error');
 
     const datosAlquiler = {
         clienteId: config.clienteId,
@@ -178,27 +177,37 @@ async function procesarAlquiler() {
     try {
         const res = await fetch('/api/alquileres', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
             body: JSON.stringify(datosAlquiler)
         });
 
-        const data = await res.json();
-
-        if (res.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Alquiler Procesado',
-                text: 'Generando acta de impresión...',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            generarActaImpresion(data.actaData);
-            localStorage.removeItem('configAlquiler');
-            setTimeout(() => { window.location.href = 'inicio.html'; }, 3000);
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Alquiler Procesado',
+                    text: 'Generando acta de impresión...',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                generarActaImpresion(data.actaData);
+                localStorage.removeItem('configAlquiler');
+                setTimeout(() => { window.location.href = 'inicio.html'; }, 3000);
+            } else {
+                Swal.fire('Error', data.mensaje || 'Error al procesar', 'error');
+            }
         } else {
-            Swal.fire('Error', data.mensaje, 'error');
+            throw new Error("El servidor no respondió correctamente.");
         }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error(error);
+        Swal.fire('Error de Conexión', 'El servidor se detuvo o rechazó la conexión. Por favor reinícialo.', 'error');
+    }
 }
 
 function generarActaImpresion(data) {

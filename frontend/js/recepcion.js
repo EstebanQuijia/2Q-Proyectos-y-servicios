@@ -1,3 +1,4 @@
+// Verificar sesión
 if (!localStorage.getItem('token')) window.location.href = '/';
 
 document.addEventListener('DOMContentLoaded', cargarAlquileresActivos);
@@ -34,32 +35,38 @@ async function cargarAlquileresActivos() {
                 const idsParaEnviar = listaEquipos.map(e => e.alquiler_id);
 
                 const card = document.createElement('div');
-                card.className = "card cliente-card shadow-sm"; 
+                card.className = "card cliente-card shadow-sm mb-4"; 
                 card.innerHTML = `
-                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center bg-white p-3 border-bottom">
                         <div>
-                            <h5 class="mb-0 fw-bold text-dark">${nombreCli}</h5>
-                            <small class="text-muted">${listaEquipos.length} equipos en este kit</small>
+                            <h5 class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">${nombreCli}</h5>
+                            <small class="text-muted" style="font-size: 0.8rem;">${listaEquipos.length} equipos en total</small>
                         </div>
-                        <button class="btn btn-success btn-sm px-4 fw-bold btn-corto" onclick="recibirTodo([${idsParaEnviar}])">
-                             RECIBIR KIT
+                        <button class="btn btn-success fw-bold shadow-sm" 
+                                style="font-size: 0.85rem; padding: 8px 25px; width: auto !important; min-width: 150px; height: auto; border-radius: 8px; transition: 0.3s;" 
+                                onmouseover="this.style.transform='scale(1.05)'"
+                                onmouseout="this.style.transform='scale(1)'"
+                                onclick="recibirTodo([${idsParaEnviar}])">
+                             <i class="bi bi-check2-all me-2"></i> RECIBIR KIT
                         </button>
                     </div>
                     <div class="card-body p-0">
                         ${listaEquipos.map(e => `
-                            <div class="equipo-row">
-                                <div class="d-flex align-items-center" style="gap: 50px;">
-                                    <div style="min-width: 200px;">
-                                        <span class="text-muted d-block small">Equipo</span>
-                                        <span class="fw-medium">${e.equipo_nombre}</span>
+                            <div class="equipo-row d-flex justify-content-between align-items-center p-2 px-3 border-bottom" style="background: #fafafa;">
+                                <div class="d-flex align-items-center" style="gap: 40px;">
+                                    <div style="min-width: 150px;">
+                                        <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Equipo</span>
+                                        <span class="fw-medium" style="font-size: 0.85rem;">${e.equipo_nombre}</span>
                                     </div>
                                     <div>
-                                        <span class="text-muted d-block small">Serie</span>
-                                        <span class="badge bg-light text-dark border" style="font-family: monospace;">${e.numero_serie}</span>
+                                        <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Serie</span>
+                                        <span class="badge bg-light text-dark border fw-normal" style="font-family: monospace; font-size: 0.8rem; padding: 2px 6px;">${e.numero_serie}</span>
                                     </div>
                                 </div>
-                                <button class="btn btn-report-neutral w-auto" onclick="reportarDano(${e.alquiler_id}, '${e.numero_serie}')">
-                                    <i class="bi bi-pencil-square me-1"></i> Nota
+                                <button class="btn btn-outline-secondary fw-bold" 
+                                        style="font-size: 0.65rem; padding: 2px 10px; width: auto !important; height: 24px; display: inline-flex; align-items: center; justify-content: center;" 
+                                        onclick="reportarDano(${e.alquiler_id}, '${e.numero_serie}')">
+                                    <i class="bi bi-pencil-square me-1"></i> NOTA
                                 </button>
                             </div>
                         `).join('')}
@@ -68,36 +75,68 @@ async function cargarAlquileresActivos() {
                 container.appendChild(card);
             });
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error al cargar activos:", e); }
 }
 
+// RECIBIR KIT CON SWEETALERT2
 async function recibirTodo(alquileresIds) {
-    if (!confirm(`¿Confirmar recepción de los equipos en buen estado?`)) return;
-    try {
-        const res = await fetch('/api/alquileres/recibir-grupo', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ alquileresIds: alquileresIds })
-        });
-        if (res.ok) { await cargarAlquileresActivos(); }
-    } catch (e) { alert("Error de conexión."); }
+    const result = await Swal.fire({
+        title: '¿Confirmar Recepción?',
+        text: `¿Deseas recibir estos ${alquileresIds.length} equipos en buen estado?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, recibir kit',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const res = await fetch('/api/alquileres/recibir-grupo', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ alquileresIds: alquileresIds })
+            });
+
+            if (res.ok) {
+                await Swal.fire({ icon: 'success', title: 'Kit Recibido', timer: 1500, showConfirmButton: false });
+                cargarAlquileresActivos(); 
+            }
+        } catch (e) { Swal.fire('Error', 'No se pudo conectar.', 'error'); }
+    }
 }
 
+// NOTA CON SWEETALERT2
 async function reportarDano(id, serie) {
-    const nota = prompt(`Detalle del estado del equipo (Serie: ${serie}):`);
-    if (!nota) return;
-    try {
-        const res = await fetch(`/api/alquileres/${id}/dano`, {
-            method: 'PATCH',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ observacionesDano: nota })
-        });
-        if (res.ok) { await cargarAlquileresActivos(); }
-    } catch (e) { console.error(e); }
+    const { value: nota } = await Swal.fire({
+        title: 'Reportar Novedad o Daño',
+        input: 'textarea',
+        inputLabel: `S/N: ${serie}`,
+        inputPlaceholder: 'Escribe aquí los detalles...',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Enviar a Mantenimiento',
+        cancelButtonText: 'Cerrar'
+    });
+
+    if (nota) {
+        try {
+            const res = await fetch(`/api/alquileres/recibir-dano/${id}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ observacionesDano: nota })
+            });
+            if (res.ok) {
+                await Swal.fire('Registrado', 'Equipo enviado a mantenimiento.', 'success');
+                cargarAlquileresActivos(); 
+            }
+        } catch (e) { Swal.fire('Error', 'No se pudo conectar.', 'error'); }
+    }
 }

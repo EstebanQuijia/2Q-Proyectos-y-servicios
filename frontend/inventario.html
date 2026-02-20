@@ -10,52 +10,24 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        /* Estilo de la Barra de Alquiler Superior */
-        .barra-alquiler-container {
-            background: #2c3e50;
-            color: white;
-            padding: 15px 0;
-            position: sticky;
-            top: 70px; /* Debajo de la navbar */
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        .barra-alquiler-flex {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .count-item {
-            font-size: 0.9rem;
-            background: rgba(255,255,255,0.1);
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
-
-        .count-item strong {
-            color: #00d2ff;
-        }
-
-        /* Estilos del Grid del Inventario */
+        /* Estilos del Grid del Inventario - Ahora 2 por fila como máximo */
         .inventario-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 25px;
             margin-top: 30px;
         }
 
+        /* Tarjeta Horizontal */
         .equipo-card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
+            display: flex; /* Alineación horizontal */
+            padding: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transition: transform 0.2s;
-            max-width: 100%; 
             overflow: hidden; 
+            min-height: 220px;
         }
 
         .equipo-card:hover {
@@ -63,18 +35,18 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
 
+        /* Foto reducida a la izquierda */
         .equipo-foto {
-            width: 100%;
-            height: 250px;
+            width: 160px;
+            min-width: 160px;
+            height: 160px;
             border-radius: 8px;
             background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #999;
-            margin-bottom: 15px;
+            margin-right: 20px;
             overflow: hidden;
-            position: relative;
         }
 
         .equipo-foto img {
@@ -83,39 +55,51 @@
             object-fit: contain; 
         }
 
-        .stock {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 10px;
+        .equipo-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
-        .stock.disponible { background: #d4edda; color: #155724; }
-        .stock.agotado { background: #f8d7da; color: #721c24; }
+
+        /* Contenedor de Unidades dentro de la tarjeta */
+        .unidades-container {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .unidad-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: #f9f9f9;
+        }
+
+        .btn-seleccionar-unidad {
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .stock-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body class="dashboard">
-
-    <div id="barraAlquiler" class="barra-alquiler-container" style="display: none;">
-        <div class="container">
-            <div class="barra-alquiler-flex">
-                <div class="count-item">Receptores: <strong id="count-receptores">0/0</strong></div>
-                <div class="count-item">Colectores: <strong id="count-colectores">0/0</strong></div>
-                <div class="count-item">Bastones: <strong id="count-bastones">0/0</strong></div>
-                
-                <div id="info-extras" style="display: none;"></div>
-
-                <button id="btn-estado-alquiler" class="btn btn-secondary btn-sm fw-bold">
-                    Pendiente
-                </button>
-            </div>
-        </div>
-    </div>
-
     <div class="content">
-        <h2 class="text-center">Inventario de Equipos</h2> 
-        
+        <h2 class="text-center fw-bold" style="color: #1a252f;">Inventario de Equipos</h2> 
         <div class="inventario-grid" id="inventarioGrid">
             </div>
     </div>

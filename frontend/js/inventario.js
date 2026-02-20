@@ -3,10 +3,8 @@ if (!localStorage.getItem('token')) {
   window.location.href = '/';
 }
 
-// 1. OBTENER CONFIGURACIÓN DE COMBO
 let configAlquiler = JSON.parse(localStorage.getItem('configAlquiler'));
 
-// Función para cerrar sesión
 function cerrarSesion() {
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
@@ -14,7 +12,6 @@ function cerrarSesion() {
   window.location.href = '/';
 }
 
-// 2. RENDERIZAR BARRA DE PROGRESO SUPERIOR
 function renderizarBarraProgreso() {
   configAlquiler = JSON.parse(localStorage.getItem('configAlquiler'));
   if (!configAlquiler) return;
@@ -29,14 +26,12 @@ function renderizarBarraProgreso() {
   barra.style.zIndex = '1050';
   barra.style.fontSize = '0.85rem';
   barra.style.background = '#1a252f'; 
-  barra.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 
   const { minimos, seleccionados } = configAlquiler;
   const rec = seleccionados.receptores || [];
   const col = seleccionados.colectores || [];
   const bas = seleccionados.bastones || [];
-  const ext = seleccionados.extras || [];
-
+  
   const listoReceptores = rec.length >= minimos.receptores;
   const listoColectores = col.length >= minimos.colectores;
   const listoBastones = bas.length >= minimos.bastones;
@@ -49,54 +44,20 @@ function renderizarBarraProgreso() {
         <span class="me-3">Receptores: <strong class="${listoReceptores ? 'text-success' : 'text-danger'}">${rec.length}/${minimos.receptores}</strong></span>
         <span class="me-3">Colectores: <strong class="${listoColectores ? 'text-success' : 'text-danger'}">${col.length}/${minimos.colectores}</strong></span>
         <span class="me-3">Bastones: <strong class="${listoBastones ? 'text-success' : 'text-danger'}">${bas.length}/${minimos.bastones}</strong></span>
-        ${ext.length > 0 ? `<span class="badge bg-info text-dark ms-2"> +${ext.length} EXTRA(S)</span>` : ''}
       </div>
-      
       <div class="d-flex" style="gap: 15px;">
         <button class="btn btn-sm fw-bold" 
-                style="background: white; color: #dc3545; border: 2px solid #dc3545; padding: 5px 15px; font-size: 0.75rem; font-family: inherit; transition: 0.3s;" 
-                onclick="cancelarSeleccion()"
-                onmouseover="this.style.background='#dc3545'; this.style.color='white'"
-                onmouseout="this.style.background='white'; this.style.color='#dc3545'">
-          CANCELAR
+                style="background: white; color: #dc3545; border: 2px solid #dc3545; padding: 5px 15px;" 
+                onclick="cancelarSeleccion()">
+                CANCELAR
         </button>
-
-        <button class="btn btn-sm fw-bold text-white" 
-                style="background: #0056b3; border: none; padding: 5px 20px; font-size: 0.75rem; font-family: inherit; transition: 0.3s;"
-                onclick="confirmarYPasar(${todoCompleto})"
-                onmouseover="this.style.background='#198754'; this.style.transform='scale(1.05)'"
-                onmouseout="this.style.background='#0056b3'; this.style.transform='scale(1)'">
-          FINALIZAR SELECCIÓN
-        </button>
+        <button class="btn btn-sm btn-primary fw-bold" onclick="confirmarYPasar(${todoCompleto})">FINALIZAR</button>
       </div>
     </div>
   `;
   document.body.prepend(barra);
 }
 
-// VALIDACIÓN DE KIT INCOMPLETO CON SWEETALERT2
-function confirmarYPasar(estaCompleto) {
-    if (estaCompleto) {
-        irAResumen();
-    } else {
-        Swal.fire({
-            title: '¿Kit Incompleto?',
-            text: "Aún te faltan equipos para cumplir con el plan. ¿Deseas continuar hacia el resumen de todas formas?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#0056b3',
-            cancelButtonColor: '#dc3545',
-            confirmButtonText: 'Sí, continuar',
-            cancelButtonText: 'No, seguir eligiendo'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                irAResumen();
-            }
-        });
-    }
-}
-
-// CARGAR INVENTARIO CON DESCUENTO Y COLORES
 async function cargarInventario() {
   try {
     renderizarBarraProgreso();
@@ -110,64 +71,94 @@ async function cargarInventario() {
     if (configAlquiler && configAlquiler.seleccionados) {
         const s = configAlquiler.seleccionados;
         idsSeleccionados = [
-            ...(s.receptores || []),
-            ...(s.colectores || []),
-            ...(s.bastones || []),
-            ...(s.tripodes || []), 
-            ...(s.otros || []),
+            ...(s.receptores || []).map(e => e.id),
+            ...(s.colectores || []).map(e => e.id),
+            ...(s.bastones || []).map(e => e.id),
             ...(s.extras || []).map(e => e.id)
         ];
     }
 
-    data.forEach(tipo => {
-      let unidadesEnUso = 0;
-      if (tipo.unidades_ids && idsSeleccionados.length > 0) {
-          const idsDeEstaTarjeta = tipo.unidades_ids.toString().split(',').map(Number);
-          unidadesEnUso = idsDeEstaTarjeta.filter(id => idsSeleccionados.includes(id)).length;
-      }
-      
+    for (const tipo of data) {
+      const idsDeEstaTarjeta = tipo.unidades_ids ? tipo.unidades_ids.toString().split(',').map(Number) : [];
+      const unidadesEnUso = idsDeEstaTarjeta.filter(id => idsSeleccionados.includes(id)).length;
       const disponiblesVisual = (tipo.disponibles || 0) - unidadesEnUso;
-      let colorFondo = "#d4edda"; 
-      let colorTexto = "#155724";
-
+      
+      let estiloStock = 'background: #d4edda; color: #155724;'; 
       if (disponiblesVisual <= 0) {
-        colorFondo = "#f8d7da"; 
-        colorTexto = "#721c24";
-      } else if (disponiblesVisual >= 1 && disponiblesVisual <= 2) {
-        colorFondo = "#fff3cd"; 
-        colorTexto = "#856404";
+        estiloStock = 'background: #f8d7da; color: #721c24;'; 
+      } else if (disponiblesVisual <= 2) {
+        estiloStock = 'background: #fff3cd; color: #856404;'; 
       }
+
+      let unidadesHTML = '';
+      try {
+          const resU = await fetch(`/api/inventario/unidades/${tipo.id}`);
+          if (resU.ok) {
+              const unidades = await resU.json();
+              unidades.forEach(u => {
+                  const yaElegido = idsSeleccionados.includes(u.id);
+                  const estaDisponible = u.estado === 'disponible' && !yaElegido;
+                  
+                  // CORRECCIÓN: Eliminado el texto "S/N:" para una vista más limpia
+                  unidadesHTML += `
+                    <div class="unidad-tag" style="border-left: 4px solid ${u.estado === 'disponible' ? '#28a745' : '#dc3545'}">
+                        <span class="fw-bold" style="font-size: 0.85rem;">${u.numero_serie}</span>
+                        ${configAlquiler && estaDisponible ? 
+                            `<button class="btn btn-success btn-sm py-0 ms-2" onclick="seleccionarEquipo(${u.id}, '${tipo.tipo}', '${u.numero_serie}')">AGREGAR</button>` : 
+                            (yaElegido ? '<span class="badge bg-primary ms-2">EN LISTA</span>' : `<span class="text-muted small ms-2">${u.estado.toUpperCase()}</span>`)
+                        }
+                    </div>
+                  `;
+              });
+          }
+      } catch (e) { console.error("Error unidades", e); }
 
       const card = document.createElement('div');
       card.className = 'equipo-card';
-      card.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
       card.innerHTML = `
         <div class="equipo-foto">
           ${tipo.foto ? `<img src="media/equipos/${tipo.foto}" alt="${tipo.nombre}">` : '<span>Sin foto</span>'}
         </div>
         <div class="equipo-info">
-          <h3 style="font-size: 1.2rem; font-weight: 700;">${tipo.nombre}</h3>
-          <p><strong>Tipo:</strong> ${tipo.tipo}</p>
-          <p class="text-muted small mb-2">${tipo.descripcion || 'Sin descripción'}</p>
-          <span class="stock" style="background-color: ${colorFondo} !important; color: ${colorTexto} !important; padding: 4px 12px; border-radius: 15px; font-weight: bold; display: inline-block; font-size: 0.85rem;">
-            ${disponiblesVisual} de ${tipo.total || 0} disponibles
-          </span>
-          <br>
-          <button class="btn btn-primary btn-small w-100 mt-3" style="font-family: inherit; background-color: #0056b3; border: none;" onclick="verUnidades(${tipo.id})">Ver Unidades</button>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;">${tipo.nombre}</h3>
+          <p class="text-muted small mb-1">${tipo.tipo}</p>
+          <div>
+            <span class="stock" style="${estiloStock} padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8rem; display: inline-block;">
+                ${disponiblesVisual} de ${tipo.total} disponibles
+            </span>
+          </div>
+          <div class="unidades-container" style="margin-top:10px;">
+            ${unidadesHTML || '<p class="text-muted small">Cargando unidades...</p>'}
+          </div>
         </div>
       `;
       grid.appendChild(card);
-    });
-  } catch (error) {
-    console.error('Error al cargar inventario:', error);
-  }
+    }
+  } catch (error) { console.error('Error', error); }
 }
 
-function verUnidades(tipoId) {
-  window.location.href = `detalle-equipos.html?id=${tipoId}`;
+function seleccionarEquipo(id, categoria, serie) {
+    let config = JSON.parse(localStorage.getItem('configAlquiler'));
+    if (!config) return;
+
+    const catNorm = categoria.toLowerCase();
+    const equipoData = { id: id, serie: serie };
+    
+    if (catNorm.includes('receptor')) config.seleccionados.receptores.push(equipoData);
+    else if (catNorm.includes('colector')) config.seleccionados.colectores.push(equipoData);
+    else if (catNorm.includes('bastón') || catNorm.includes('baston')) config.seleccionados.bastones.push(equipoData);
+    else config.seleccionados.extras.push({ id: id, nombre: `${categoria} - ${serie}`, serie: serie });
+
+    localStorage.setItem('configAlquiler', JSON.stringify(config));
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${serie} agregado`, showConfirmButton: false, timer: 1000 });
+    cargarInventario(); 
 }
 
-// CANCELAR CON SWEETALERT2
+function confirmarYPasar(estaCompleto) {
+    if (estaCompleto) window.location.href = 'resumen-alquiler.html';
+    else Swal.fire({ title: '¿Kit Incompleto?', text: "Faltan equipos. ¿Continuar?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, continuar' }).then((r) => { if (r.isConfirmed) window.location.href = 'resumen-alquiler.html'; });
+}
+
 function cancelarSeleccion() {
     Swal.fire({
         title: '¿Cancelar Selección?',
@@ -184,10 +175,6 @@ function cancelarSeleccion() {
             window.location.href = 'combos.html';
         }
     });
-}
-
-function irAResumen() {
-  window.location.href = 'resumen-alquiler.html';
 }
 
 document.addEventListener('DOMContentLoaded', cargarInventario);

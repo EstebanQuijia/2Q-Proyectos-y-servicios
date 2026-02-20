@@ -72,14 +72,19 @@ exports.recibirConDano = (req, res) => {
     });
 };
 
-// REGISTRAR ALQUILER (SALIDA) - ACTUALIZADO PARA GENERAR ACTA
+// REGISTRAR ALQUILER (SALIDA) - ACTUALIZADO CON VALIDACIONES DE SEGURIDAD
 exports.registrarAlquiler = (req, res) => {
     const { clienteId, equiposIds, fechaInicio, fechaFin, observaciones } = req.body;
 
+    // VALIDACIÓN DE SEGURIDAD: Evita que el servidor colapse si equiposIds no es válido
+    if (!equiposIds || !Array.isArray(equiposIds) || equiposIds.length === 0) {
+        return res.status(400).json({ mensaje: 'No se recibieron IDs de equipos válidos.' });
+    }
+
     db.serialize(() => {
-        // 1. Obtener datos del cliente (nombre, cedula, direccion, etc)
+        // 1. Obtener datos del cliente
         db.get('SELECT * FROM clientes WHERE id = ?', [clienteId], (err, cliente) => {
-            if (err || !cliente) return res.status(500).json({ mensaje: 'Error al obtener cliente' });
+            if (err || !cliente) return res.status(500).json({ mensaje: 'Error al obtener cliente o cliente no existe.' });
 
             // 2. Obtener datos de los equipos seleccionados
             const placeholders = equiposIds.map(() => '?').join(',');
@@ -90,7 +95,7 @@ exports.registrarAlquiler = (req, res) => {
                 WHERE e.id IN (${placeholders})`;
 
             db.all(queryEquipos, equiposIds, (err, listaEquipos) => {
-                if (err) return res.status(500).json({ mensaje: 'Error al obtener equipos' });
+                if (err) return res.status(500).json({ mensaje: 'Error al obtener la lista de equipos.' });
 
                 db.run('BEGIN TRANSACTION');
                 try {
@@ -105,17 +110,20 @@ exports.registrarAlquiler = (req, res) => {
                     stmtAlq.finalize(); 
                     stmtEqui.finalize();
 
-                    db.run('COMMIT', (err) => {
-                        if (err) { db.run('ROLLBACK'); return res.status(500).json({ mensaje: 'Error en el commit' }); }
+                    db.run('COMMIT', (errCommit) => {
+                        if (errCommit) { 
+                            db.run('ROLLBACK'); 
+                            return res.status(500).json({ mensaje: 'Error al confirmar la transacción en la base de datos.' }); 
+                        }
                         
-                        // 3. Devolvemos TODO al frontend para que la ventana emergente genere el acta
+                        // 3. Respuesta exitosa con toda la data para el acta de impresión
                         res.json({ 
-                            mensaje: 'Alquiler registrado.',
+                            mensaje: 'Alquiler registrado correctamente.',
                             actaData: {
                                 cliente: {
                                     nombre: cliente.nombre,
                                     cedula: cliente.cedula,
-                                    direccion: cliente.direccion || 'Quito',
+                                    direccion: cliente.direccion || 'Quito - Pichincha - Ecuador',
                                     telefono: cliente.telefono || 'S/N'
                                 },
                                 equipos: listaEquipos,
@@ -126,7 +134,8 @@ exports.registrarAlquiler = (req, res) => {
                     });
                 } catch (e) { 
                     db.run('ROLLBACK'); 
-                    res.status(500).json({ mensaje: 'Error en el proceso' }); 
+                    console.error("Error crítico en transacción:", e);
+                    res.status(500).json({ mensaje: 'Error interno procesando la transacción.' }); 
                 }
             });
         });
