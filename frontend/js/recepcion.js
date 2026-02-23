@@ -24,9 +24,17 @@ async function cargarAlquileresActivos() {
         }, {});
 
         Object.keys(agenda).sort().forEach(fecha => {
+            // Formateo de fecha para evitar el formato ISO de PostgreSQL
+            const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                timeZone: 'UTC'
+            });
+
             const fechaDiv = document.createElement('div');
             fechaDiv.className = "fecha-header";
-            fechaDiv.innerHTML = `<i class="bi bi-calendar3 me-2"></i> ${fecha}`;
+            fechaDiv.innerHTML = `<i class="bi bi-calendar3 me-2"></i> ${fechaFormateada}`;
             container.appendChild(fechaDiv);
 
             const clientes = agenda[fecha];
