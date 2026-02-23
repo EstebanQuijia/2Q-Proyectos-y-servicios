@@ -164,7 +164,7 @@ async function cargarEquiposMantenimiento() {
                             </div>
                         </div>
                         <button class="btn btn-primary btn-sm px-3 fw-bold" style="width: auto; background-color: #0056b3; font-family: inherit;" onclick="repararEquipo(${e.id})">
-                            ✅ REPARADO
+                             REPARADO
                         </button>
                     </div>
                 </div>

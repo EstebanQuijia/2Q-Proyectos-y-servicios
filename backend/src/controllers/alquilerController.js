@@ -54,7 +54,7 @@ exports.finalizarGrupoAlquiler = (req, res) => {
     });
 };
 
-// REPORTAR DAÑO (INDIVIDUAL)
+// REPORTAR DAÑO (INDIVIDUAL) - CORREGIDO PARA ASEGURAR PASO A MANTENIMIENTO
 exports.recibirConDano = (req, res) => {
     const { alquilerId } = req.params;
     const { observacionesDano } = req.body;
@@ -62,31 +62,50 @@ exports.recibirConDano = (req, res) => {
     db.get('SELECT equipo_id FROM alquileres WHERE id = ?', [alquilerId], (err, row) => {
         if (err || !row) return res.status(404).json({ mensaje: "Alquiler no encontrado" });
         
-        db.run('BEGIN TRANSACTION');
-        db.run("UPDATE alquileres SET estado = 'finalizado', observaciones = ? WHERE id = ?", [`DAÑO: ${observacionesDano}`, alquilerId]);
-        db.run("UPDATE equipos SET estado = 'mantenimiento' WHERE id = ?", [row.equipo_id], (err) => {
-            if (err) { db.run('ROLLBACK'); return res.status(500).send(); }
-            db.run('COMMIT');
-            res.json({ mensaje: 'Equipo enviado a mantenimiento.' });
+        const equipoId = row.equipo_id;
+
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+
+            // 1. Finalizar alquiler con nota de daño
+            const qAlq = "UPDATE alquileres SET estado = 'finalizado', observaciones = ? WHERE id = ?";
+            db.run(qAlq, [`DAÑO: ${observacionesDano}`, alquilerId], (err1) => {
+                if (err1) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ mensaje: "Error al actualizar registro de alquiler" });
+                }
+
+                // 2. Mover equipo a estado de mantenimiento
+                const qEq = "UPDATE equipos SET estado = 'mantenimiento' WHERE id = ?";
+                db.run(qEq, [equipoId], (err2) => {
+                    if (err2) {
+                        db.run('ROLLBACK');
+                        return res.status(500).json({ mensaje: "Error al cambiar estado del equipo" });
+                    }
+
+                    // 3. Confirmar transacción
+                    db.run('COMMIT', (err3) => {
+                        if (err3) return res.status(500).json({ mensaje: "Error al confirmar mantenimiento" });
+                        res.json({ mensaje: 'Equipo enviado a mantenimiento correctamente.' });
+                    });
+                });
+            });
         });
     });
 };
 
-// REGISTRAR ALQUILER (SALIDA) - ACTUALIZADO CON VALIDACIONES DE SEGURIDAD
+// REGISTRAR ALQUILER (SALIDA)
 exports.registrarAlquiler = (req, res) => {
     const { clienteId, equiposIds, fechaInicio, fechaFin, observaciones } = req.body;
 
-    // VALIDACIÓN DE SEGURIDAD: Evita que el servidor colapse si equiposIds no es válido
     if (!equiposIds || !Array.isArray(equiposIds) || equiposIds.length === 0) {
         return res.status(400).json({ mensaje: 'No se recibieron IDs de equipos válidos.' });
     }
 
     db.serialize(() => {
-        // 1. Obtener datos del cliente
         db.get('SELECT * FROM clientes WHERE id = ?', [clienteId], (err, cliente) => {
-            if (err || !cliente) return res.status(500).json({ mensaje: 'Error al obtener cliente o cliente no existe.' });
+            if (err || !cliente) return res.status(500).json({ mensaje: 'Error al obtener cliente.' });
 
-            // 2. Obtener datos de los equipos seleccionados
             const placeholders = equiposIds.map(() => '?').join(',');
             const queryEquipos = `
                 SELECT e.numero_serie, te.nombre, te.marca, te.modelo 
@@ -95,7 +114,7 @@ exports.registrarAlquiler = (req, res) => {
                 WHERE e.id IN (${placeholders})`;
 
             db.all(queryEquipos, equiposIds, (err, listaEquipos) => {
-                if (err) return res.status(500).json({ mensaje: 'Error al obtener la lista de equipos.' });
+                if (err) return res.status(500).json({ mensaje: 'Error al obtener lista de equipos.' });
 
                 db.run('BEGIN TRANSACTION');
                 try {
@@ -113,10 +132,9 @@ exports.registrarAlquiler = (req, res) => {
                     db.run('COMMIT', (errCommit) => {
                         if (errCommit) { 
                             db.run('ROLLBACK'); 
-                            return res.status(500).json({ mensaje: 'Error al confirmar la transacción en la base de datos.' }); 
+                            return res.status(500).json({ mensaje: 'Error al confirmar transacción.' }); 
                         }
                         
-                        // 3. Respuesta exitosa con toda la data para el acta de impresión
                         res.json({ 
                             mensaje: 'Alquiler registrado correctamente.',
                             actaData: {
@@ -134,8 +152,7 @@ exports.registrarAlquiler = (req, res) => {
                     });
                 } catch (e) { 
                     db.run('ROLLBACK'); 
-                    console.error("Error crítico en transacción:", e);
-                    res.status(500).json({ mensaje: 'Error interno procesando la transacción.' }); 
+                    res.status(500).json({ mensaje: 'Error interno en la transacción.' }); 
                 }
             });
         });
